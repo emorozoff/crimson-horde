@@ -49,11 +49,6 @@ h1,h2,.serif{font-family:Georgia,'Times New Roman',serif;}
 #bossbar{height:12px;background:#1a0d12;border:1px solid #6a2030;border-radius:3px;overflow:hidden;}
 #bossFill{height:100%;width:100%;background:linear-gradient(90deg,#a01030,#ff4060);transition:width .1s;}
 #hintText{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:12px;color:var(--dim);text-shadow:0 1px 2px #000;}
-#comboTag{position:absolute;top:64px;right:18px;text-align:right;font-family:Georgia,serif;color:var(--gold);
-  text-shadow:0 0 10px #e7c24a66,0 2px 4px #000;opacity:0;transition:opacity .2s;}
-#comboTag.show{opacity:1;}
-#comboTag b{font-size:30px;display:block;line-height:1;}
-#comboTag span{font-size:12px;letter-spacing:3px;color:#cbb;}
 #goldflash{position:fixed;inset:0;pointer-events:none;z-index:4;opacity:0;transition:opacity .5s;
   background:radial-gradient(ellipse at center, rgba(231,194,74,.20) 0%, rgba(231,194,74,0) 65%);}
 
@@ -251,7 +246,6 @@ h1,h2,.serif{font-family:Georgia,'Times New Roman',serif;}
     <div class="hudrow"><span id="lvlText">УР. 1</span><span id="killText">☠ 0</span><span class="gold" id="goldText">◆ +0</span></div>
   </div>
   <div id="hudItems"><div id="hudWeapons"></div><div id="hudPassives"></div></div>
-  <div id="comboTag"></div>
   <div id="timeText">00:00</div>
   <div id="bossWrap" class="hidden"><div id="bossLabel"></div><div id="bossbar"><div id="bossFill"></div></div></div>
   <div id="hintText">WASD — движение · ESC — пауза</div>
@@ -381,7 +375,7 @@ h1,h2,.serif{font-family:Georgia,'Times New Roman',serif;}
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.28';
+const VERSION='0.29';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -835,7 +829,7 @@ function buildSprites(){
     speed:ico(['..bb.......','..bb.......','..bb.......','..bb.......','..bbbbbb...','..bbbbbbb..','..bbbbbbb..']),
     heart:ico(['..rr...rr..','.rrrr.rrrr.','.rrrrrrrrr.','.rrrrrrrrr.','..rrrrrrr..','...rrrrr...','....rrr....','.....r.....']),
     regen:ico(['.....g.....','.....g.....','....ggg....','...ggggg...','..ggggggg..','..ggggggg..','...ggggg...','....ggg....']),
-    magnet:ico(['.....y.....','....yyy....','.....k.....','....WWW....','....WWW....','....WWW....','....WWW....','...gWWWg...']),
+    magnet:ico(['.ss.....ss.','.rr.....rr.','.rr.....rr.','.rr.....rr.','.rrr...rrr.','.rrrrrrrrr.','..rrrrrrr..']),
     might:ico(['..ssss.....','.sSsSss....','.ssssss....','.ssssss....','..ssss.....']),
     haste:ico(['.sssssss...','..yyyyy....','...yyy.....','....y......','...yyy.....','..yyyyy....','.sssssss...']),
     crit:ico(['....g......','...ggg.....','...sss.....','...sss.....','...sss.....','...SSS.....']),
@@ -1139,7 +1133,7 @@ const UPGRADES=[
   {id:'speed', kind:'p', name:'Сапоги пилигрима', max:5, desc:()=>'+12% к скорости движения', apply:r=>{r.p.spdMul+=0.12;}},
   {id:'heart', kind:'p', name:'Священное сердце', max:5, desc:()=>'+25 макс. HP и лечит 25', apply:r=>{r.p.maxhp+=25;r.p.hp=Math.min(r.p.maxhp,r.p.hp+25);}},
   {id:'regen', kind:'p', name:'Святой елей', max:5, desc:()=>'+0.5 HP/с восстановления', apply:r=>{r.p.regen+=0.5;}},
-  {id:'magnet', kind:'p', name:'Свеча', max:4, desc:()=>'+40% радиус сбора', apply:r=>{r.p.magMul+=0.4;}},
+  {id:'magnet', kind:'p', name:'Магнит', max:4, desc:()=>'+25% радиус сбора', apply:r=>{r.p.magMul+=0.25;}},
   {id:'might', kind:'p', name:'Наручи', max:5, desc:()=>'+14% ко всему урону', apply:r=>{r.p.dmgMul+=0.14;}},
   {id:'haste', kind:'p', name:'Песочные часы', max:5, desc:()=>'-8% перезарядка оружия', apply:r=>{r.p.cdMul*=0.92;}},
   {id:'crit', kind:'p', name:'Серебряные пули', max:4, desc:()=>'+10% шанс крита (двойной урон)', apply:r=>{r.p.crit+=0.10;}},
@@ -1553,17 +1547,19 @@ function gameOver(){
 
 // ============================== GEMS / XP ==============================
 function gemDrop(x,y,val){
-  // при заваленном поле сливаем дроп в ближайший кристалл, НО с потолком ценности:
-  // без него один кристалл копит тысячи XP и после босса даёт 20 уровней подряд
-  if(run.gems.length>200){
-    let best=null,bd=120*120;
-    for(const g of run.gems){
-      if(g.kind!=='xp'||g.v>=100) continue; // переполненные не трогаем
-      const d=dist2(x,y,g.x,g.y);
-      if(d<bd){bd=d;best=g;}
-    }
-    if(best){best.v+=val;return;}
-    if(run.gems.length>480) return; // поле забито под завязку — излишек сгорает
+  // ПОЛЕ НЕ ДОЛЖНО КОПИТЬ ТЫСЯЧИ XP — иначе магнит/босс зачисляет всё разом = «лавина уровней».
+  // Держим число xp-кристаллов ограниченным; ценность каждого — с жёстким потолком; излишек сливаем/сжигаем.
+  const CAP=100, MAXGEMS=40;
+  let xpCount=0, best=null, bd=170*170;
+  for(const g of run.gems){
+    if(g.kind!=='xp') continue;
+    xpCount++;
+    if(g.v<CAP){ const d=dist2(x,y,g.x,g.y); if(d<bd){bd=d;best=g;} }
+  }
+  if(xpCount>=MAXGEMS){
+    // поле насыщено: сливаем в ближайший недозаполненный (с потолком), излишек сгорает
+    if(best) best.v=Math.min(CAP, best.v+val);
+    return;
   }
   const denoms=[50,20,5,1];
   for(const d of denoms){
@@ -2226,6 +2222,7 @@ function updateGems(dt){
   const p=run.p;
   const magR=p.magBase*p.magMul;
   for(const g of run.gems){
+    if(state!=='playing') break; // открылся левел-ап в этом кадре → прекращаем сбор; остальное соберётся после выбора (анти-лавина)
     g.t+=dt;
     const d2v=dist2(g.x,g.y,p.x,p.y);
     // магнитятся опыт, золото и сердца; сундук/магнит/бомбу нужно поднять самому
@@ -2397,11 +2394,8 @@ function refreshHud(){
     $('bossLabel').textContent=b.name;
     $('bossFill').style.width=clamp(b.hp/b.maxhp*100,0,100)+'%';
   } else $('bossWrap').classList.add('hidden');
-  // счётчик серий убийств
+  // серия убийств: считаем для достижения «Кровавая жатва» и статы, но НЕ показываем на экране (убрано в 0.29)
   if(run.combo>0&&run.time-run.comboT>2.5) run.combo=0;
-  const ct=$('comboTag');
-  if(run.combo>=5){ ct.classList.add('show'); ct.innerHTML='<b>×'+run.combo+'</b><span>СЕРИЯ</span>'; }
-  else ct.classList.remove('show');
 }
 
 // ============================== RENDER ==============================
