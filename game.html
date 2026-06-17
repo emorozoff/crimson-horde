@@ -80,15 +80,6 @@ h1,h2,.serif{font-family:var(--pix);}
   text-shadow:0 0 12px rgba(150,12,22,0.38),0 3px 0 #2a0810,0 5px 14px #000;animation:titlepulse 3.6s ease-in-out infinite;}
 @keyframes titlepulse{0%,100%{text-shadow:0 0 10px rgba(150,12,22,0.34),0 3px 0 #2a0810,0 5px 14px #000}
   50%{text-shadow:0 0 22px rgba(186,24,38,0.5),0 3px 0 #2a0810,0 5px 14px #000}}
-.drip{position:absolute;top:82%;width:5px;height:0;background:#9e0f1c;border-radius:2px;
-  box-shadow:0 0 7px rgba(150,12,22,0.55);opacity:0;animation:drip 5s ease-in infinite;}
-.drip::after{content:'';position:absolute;left:-1.5px;bottom:-4px;width:8px;height:8px;border-radius:50%;
-  background:#9e0f1c;box-shadow:0 0 7px rgba(150,12,22,0.55);}
-@keyframes drip{0%{height:0;opacity:0}12%{opacity:.95}68%{height:30px;opacity:.95}100%{height:62px;opacity:0}}
-.drip.d1{left:13%;animation-duration:5.5s;animation-delay:.2s}
-.drip.d2{left:39%;animation-duration:6.8s;animation-delay:2.1s}
-.drip.d3{left:62%;animation-duration:6.1s;animation-delay:3.4s}
-.drip.d4{left:85%;animation-duration:7.4s;animation-delay:1.2s}
 .subtitle{font-family:var(--pix);color:var(--dim);letter-spacing:3px;font-size:20px;margin-top:-2px;}
 .btn{pointer-events:auto;cursor:var(--cur,pointer);border:2px solid #46343a;border-radius:5px;color:#d9d2c4;
   background:linear-gradient(180deg,#3b3e48 0%,#2c2e37 50%,#1b1d24 100%);padding:11px 24px;font-size:22px;letter-spacing:1px;
@@ -300,7 +291,7 @@ body.ingame,body.ingame *{cursor:none!important;}
 <div id="btnFull" title="Полный экран">⛶</div>
 
 <div id="scrMenu" class="screen">
-  <div class="titlewrap"><h1 class="title">LONG NIGHT</h1><span class="drip d1"></span><span class="drip d2"></span><span class="drip d3"></span><span class="drip d4"></span></div>
+  <div class="titlewrap"><h1 class="title">LONG NIGHT</h1></div>
   <div class="subtitle">НОЧЬ БУДЕТ ОЧЕНЬ ДОЛГОЙ</div>
   <hr class="divline">
   <button class="btn big" id="btnStart"><span class="ar">▸</span> НА ОХОТУ</button>
@@ -416,7 +407,7 @@ body.ingame,body.ingame *{cursor:none!important;}
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.44';
+const VERSION='0.45';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -1106,7 +1097,7 @@ buildSprites();
   SPR.menuIco={
     heroes:mico(['....www....','...wwwww...','...wwwww...','....www....','.....w.....','...wwwww...','..wwwwwww..','..w.www.w..','....www....','...ww.ww...','..ww...ww..']),
     shop:mico(['...wwwww...','..wwwwwww..','..wwwwwww..','..ww.r.ww..','..w.rrr.w..','..ww.r.ww..','..ww.r.ww..','..wwwwwww..','.wwwwwwwww.','.wwwwwwwww.','.wwwwwwwww.']),
-    stats:mico(['.wwwwwwwww.','.w.......w.','.w.kkkkk.w.','.w.......w.','.w.kkkkk.w.','.w.......w.','.w.kkkkk.w.','.w.......w.','.w.kkkkk.w.','.w.......w.','.wwwwwwwww.']),
+    stats:mico(['.wwww.wwww.','wwwwwkwwwww','wkkkwkwkkkw','wwwwwkwwwww','wkkkwkwkkkw','wwwwwkwwwww','wkkkwkwkkkw','wwwwwkwwwww','wkkkwkwkkkw','.wwwwkwwww.','.ggggggggg.']),
     best:mico(['...wwwww...','..wwwwwww..','.wwwwwwwww.','.wkk.w.kkw.','.wkk.w.kkw.','.wwwwwwwww.','..wwwwwww..','...wwkww...','..wwwwwww..','..w.w.w.w..','..w.w.w.w..']),
     set:mico(['...w.w.w...','.wwwwwwwww.','.wwwwwwwww.','.ww.www.ww.','.ww.w.w.ww.','w..w.k.w..w','.ww.w.w.ww.','.ww.www.ww.','.wwwwwwwww.','.wwwwwwwww.','...w.w.w...'])
   };
