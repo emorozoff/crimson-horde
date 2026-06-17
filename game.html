@@ -410,7 +410,7 @@ body.ingame,body.ingame *{cursor:none!important;}
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.60';
+const VERSION='0.61';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -3619,6 +3619,20 @@ function drawEnemies(px,py){
   if(bosses) for(const e of bosses) drawEnemy(e);
 }
 const BOSS_DRAW={}; // анимированная отрисовка боссов по bkind (пусто = generic спрайт)
+// пиксельный рендер босса: рисуем в маленький буфер (через g) и масштабируем БЕЗ сглаживания → угловато, как мобы
+function pixelBoss(e, rf, drawFn){
+  const R=e.r*rf, PIX=4, span=R*3.4, dim=Math.max(8,Math.ceil(span/PIX));
+  const oc=pixelBoss._oc||(pixelBoss._oc=document.createElement('canvas'));
+  if(oc.width!==dim){ oc.width=dim; oc.height=dim; }
+  const g=oc.getContext('2d');
+  g.clearRect(0,0,dim,dim);
+  g.save(); g.translate(dim/2,dim/2); g.scale(1/PIX,1/PIX);
+  drawFn(g,R);
+  g.restore();
+  ctx.save(); ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(oc, Math.round(e.x-dim*PIX/2), Math.round(e.y-dim*PIX/2), dim*PIX, dim*PIX);
+  ctx.restore();
+}
 // Матерь роя — пиксельно-чанковая паучиха: плоские бэнды (без градиентов), квадратные сегментные ноги/глаза, узор, яйцеклад; анимация ног/дыхания/глаз сохранена
 BOSS_DRAW.matron=function(e,flashing){
   const R=e.r*1.4, t=e.t, ph=e.phase||0;
@@ -3682,40 +3696,39 @@ BOSS_DRAW.matron=function(e,flashing){
 };
 // === Боссы #2-#8: анимированная отрисовка спрайта + тематические эффекты (BOSS_MECH/зоны/гейты не трогаем) ===
 // Гнилой палач — гниющий палач с тесаком над ядовитой лужей (процедурно, плоские бэнды; r фиксирован)
-BOSS_DRAW.flayer=function(e,flashing){
-  const t=e.t, ph=e.phase||0, R=e.r*1.3;
+BOSS_DRAW.flayer=function(e,flashing){ pixelBoss(e,1.3,(g,R)=>{
+  const t=e.t, ph=e.phase||0;
   const O='#0e1408',D='#2a3a18',M='#46612a',L='#6e8c3e',fd='#4a2e26',fL='#6e4636',B='#cfc8b4';
-  const ell=(cx,cy,rx,ry,col)=>{ctx.fillStyle=col;ctx.beginPath();ctx.ellipse(cx,cy,rx,ry,0,0,TAU);ctx.fill();};
+  const ell=(cx,cy,rx,ry,col)=>{g.fillStyle=col;g.beginPath();g.ellipse(cx,cy,rx,ry,0,0,TAU);g.fill();};
   const sway=Math.sin(t*1.5)*R*0.04, br=1+Math.sin(t*2.3)*0.025, chop=(Math.sin(t*1.7)*0.5+0.5);
-  ctx.save(); ctx.translate(e.x+sway, e.y);
+  g.save(); g.translate(sway,0);
   const mg=clamp(0.07+ph*0.03+Math.sin(t*3)*0.03,0,0.22);
   ell(0,R*0.25,R*1.2,R*1.4,'rgba(140,220,70,'+mg.toFixed(3)+')');
-  ell(0,R*1.05,R*0.92,R*0.28,'rgba(80,150,36,0.5)');
-  ell(0,R*1.05,R*0.64,R*0.17,'rgba(150,220,80,0.5)');
+  ell(0,R*1.05,R*0.92,R*0.28,'rgba(80,150,36,0.5)'); ell(0,R*1.05,R*0.64,R*0.17,'rgba(150,220,80,0.5)');
   ell(-R*0.22,R*0.92,R*0.16,R*0.22,D); ell(R*0.22,R*0.92,R*0.16,R*0.22,D);
   ell(-R*0.5,R*0.32,R*0.15,R*0.42,fd); ell(-R*0.52,R*0.66,R*0.13,R*0.15,B);
-  ctx.save(); ctx.scale(1,br);
+  g.save(); g.scale(1,br);
   ell(0,R*0.2,R*0.6,R*0.8,O); ell(0,R*0.2,R*0.52,R*0.72,D);
   ell(-R*0.05,R*0.06,R*0.4,R*0.54,M); ell(-R*0.1,-R*0.08,R*0.24,R*0.3,L);
-  ctx.restore();
+  g.restore();
   for(const pp of [[-0.24,0.02],[0.2,0.24],[-0.04,0.44],[0.3,-0.04]]){ const z=R*(0.07+0.02*Math.sin(t*3+pp[0]*6)); ell(pp[0]*R,(0.12+pp[1])*R,z,z,'rgba(176,222,96,'+(0.6+Math.sin(t*3+pp[1])*0.3).toFixed(2)+')'); }
   ell(0,-R*0.52,R*0.34,R*0.42,O); ell(0,-R*0.52,R*0.28,R*0.36,D); ell(0,-R*0.48,R*0.2,R*0.24,M);
   const eg=clamp(0.6+Math.sin(t*4)*0.35,0.3,1);
-  ctx.fillStyle='rgba(174,240,96,'+eg.toFixed(2)+')'; ctx.fillRect(-R*0.14,-R*0.52,R*0.1,R*0.09); ctx.fillRect(R*0.04,-R*0.52,R*0.1,R*0.09);
-  ctx.save(); ctx.translate(R*0.46,R*0.0); ctx.rotate(-0.4-chop*0.5);
-  ctx.fillStyle=fL; ctx.fillRect(-R*0.09,-R*0.06,R*0.18,R*0.52);
-  ctx.fillStyle='#2e2014'; ctx.fillRect(-R*0.06,-R*0.56,R*0.12,R*0.54);
-  ctx.fillStyle='#160808'; ctx.fillRect(-R*0.08,-R*1.04,R*0.62,R*0.46);
-  ctx.fillStyle='#6e6048'; ctx.fillRect(-R*0.08,-R*1.0,R*0.6,R*0.4);
-  ctx.fillStyle='#928068'; ctx.fillRect(-R*0.08,-R*1.0,R*0.6,R*0.14);
-  ctx.fillStyle='#d8d0bc'; ctx.fillRect(R*0.46,-R*1.0,R*0.06,R*0.4);
-  ctx.fillStyle='rgba(150,220,80,0.5)'; ctx.fillRect(-R*0.08,-R*0.72,R*0.6,R*0.06);
-  ctx.restore();
-  for(let i=0;i<5;i++){ const p2=(t*0.6+i*0.27)%1, sx=Math.sin(i*2.1+t*0.7)*R*0.5, sy=R*0.6-p2*R*1.4, z=R*0.05; ctx.globalAlpha=(1-p2)*0.8; ctx.fillStyle='rgba(174,240,96,0.85)'; ctx.fillRect(sx-z/2,sy-z/2,z,z); }
-  ctx.globalAlpha=1;
-  if(flashing){ ctx.globalAlpha=clamp(e.flash*4,0,0.5); ell(0,R*0.2,R*0.6,R*0.8,'#fff'); ell(0,-R*0.52,R*0.34,R*0.42,'#fff'); ctx.globalAlpha=1; }
-  ctx.restore();
-};
+  g.fillStyle='rgba(174,240,96,'+eg.toFixed(2)+')'; g.fillRect(-R*0.14,-R*0.52,R*0.1,R*0.09); g.fillRect(R*0.04,-R*0.52,R*0.1,R*0.09);
+  g.save(); g.translate(R*0.46,R*0.0); g.rotate(-0.4-chop*0.5);
+  g.fillStyle=fL; g.fillRect(-R*0.09,-R*0.06,R*0.18,R*0.52);
+  g.fillStyle='#2e2014'; g.fillRect(-R*0.06,-R*0.56,R*0.12,R*0.54);
+  g.fillStyle='#160808'; g.fillRect(-R*0.08,-R*1.04,R*0.62,R*0.46);
+  g.fillStyle='#6e6048'; g.fillRect(-R*0.08,-R*1.0,R*0.6,R*0.4);
+  g.fillStyle='#928068'; g.fillRect(-R*0.08,-R*1.0,R*0.6,R*0.14);
+  g.fillStyle='#d8d0bc'; g.fillRect(R*0.46,-R*1.0,R*0.06,R*0.4);
+  g.fillStyle='rgba(150,220,80,0.5)'; g.fillRect(-R*0.08,-R*0.72,R*0.6,R*0.06);
+  g.restore();
+  for(let i=0;i<5;i++){ const p2=(t*0.6+i*0.27)%1, sx=Math.sin(i*2.1+t*0.7)*R*0.5, sy=R*0.6-p2*R*1.4, z=R*0.05; g.globalAlpha=(1-p2)*0.8; g.fillStyle='rgba(174,240,96,0.85)'; g.fillRect(sx-z/2,sy-z/2,z,z); }
+  g.globalAlpha=1;
+  if(flashing){ g.globalAlpha=clamp(e.flash*4,0,0.5); ell(0,R*0.2,R*0.6,R*0.8,'#fff'); ell(0,-R*0.52,R*0.34,R*0.42,'#fff'); g.globalAlpha=1; }
+  g.restore();
+}); };
 BOSS_DRAW.drowned=function(e,flashing){
   const t=e.t, ph=e.phase||0, sc=e.r/42*1.25, R=e.r;
   ctx.save(); ctx.translate(e.x,e.y);
@@ -3788,48 +3801,34 @@ BOSS_DRAW.deadking=function(e,flashing){
   ctx.restore();
 };
 // Людоед — горбатый людоед с ОГРОМНОЙ жующей пастью (процедурно, плоские бэнды; растёт по e.r)
-BOSS_DRAW.maneater=function(e,flashing){
-  const t=e.t, ph=e.phase||0, R=e.r*1.35;
+BOSS_DRAW.maneater=function(e,flashing){ pixelBoss(e,1.35,(g,R)=>{
+  const t=e.t, ph=e.phase||0;
   const O='#160808',D='#3a2c1e',M='#5a4a30',L='#7c6a44',H='#9a8a5c',MAW='#180606',TT='#7c1420',T2='#b0202e',W='#ece0c8';
-  const ell=(cx,cy,rx,ry,col)=>{ctx.fillStyle=col;ctx.beginPath();ctx.ellipse(cx,cy,rx,ry,0,0,TAU);ctx.fill();};
+  const ell=(cx,cy,rx,ry,col)=>{g.fillStyle=col;g.beginPath();g.ellipse(cx,cy,rx,ry,0,0,TAU);g.fill();};
   const sway=Math.sin(t*2.2)*R*0.05, bob=Math.abs(Math.sin(t*4.2))*R*0.04, br=1+Math.sin(t*2.6)*0.03;
-  const gn=(Math.sin(t*(4+ph))*0.5+0.5);                 // 0..1 — жевание
-  const step=Math.sin(t*4.2)*R*0.06, reach=Math.sin(t*3)*R*0.08;
-  ctx.save(); ctx.translate(e.x+sway, e.y+bob);
-  // ноги (короткие, поступь)
-  ell(-R*0.34, R*0.84+step, R*0.18, R*0.15, O);
-  ell( R*0.34, R*0.84-step, R*0.18, R*0.15, O);
-  // руки (стубовые, хватают)
-  for(const s of [-1,1]){ ell(s*R*0.8, R*0.18+(s>0?reach:-reach), R*0.22, R*0.34, D); ell(s*R*0.88, R*0.46, R*0.15, R*0.16, O); }
-  // тело (горбатая масса, плоские бэнды, дыхание)
-  ctx.save(); ctx.scale(1, br);
-  ell(0,-R*0.05, R*0.92, R*0.96, O);
-  ell(0,-R*0.05, R*0.84, R*0.88, D);
-  ell(-R*0.04,-R*0.18, R*0.66, R*0.64, M);
-  ell(-R*0.1,-R*0.34, R*0.4, R*0.36, L);
-  ell(-R*0.18,-R*0.44, R*0.18, R*0.16, H);
-  ctx.restore();
-  // глаза (мелкие, красные, голодные)
+  const gn=(Math.sin(t*(4+ph))*0.5+0.5), step=Math.sin(t*4.2)*R*0.06, reach=Math.sin(t*3)*R*0.08;
+  g.save(); g.translate(sway,bob);
+  ell(-R*0.34,R*0.84+step,R*0.18,R*0.15,O); ell(R*0.34,R*0.84-step,R*0.18,R*0.15,O);
+  for(const s of [-1,1]){ ell(s*R*0.8,R*0.18+(s>0?reach:-reach),R*0.22,R*0.34,D); ell(s*R*0.88,R*0.46,R*0.15,R*0.16,O); }
+  g.save(); g.scale(1,br);
+  ell(0,-R*0.05,R*0.92,R*0.96,O); ell(0,-R*0.05,R*0.84,R*0.88,D);
+  ell(-R*0.04,-R*0.18,R*0.66,R*0.64,M); ell(-R*0.1,-R*0.34,R*0.4,R*0.36,L); ell(-R*0.18,-R*0.44,R*0.18,R*0.16,H);
+  g.restore();
   const eg=clamp(0.6+Math.sin(t*5)*0.3,0.3,1);
-  ctx.fillStyle='rgba(255,48,38,'+eg.toFixed(2)+')';
-  ctx.fillRect(-R*0.28,-R*0.36,R*0.11,R*0.11); ctx.fillRect(R*0.17,-R*0.36,R*0.11,R*0.11);
-  // ПАСТЬ (огромная, жуёт)
+  g.fillStyle='rgba(255,48,38,'+eg.toFixed(2)+')'; g.fillRect(-R*0.28,-R*0.36,R*0.11,R*0.11); g.fillRect(R*0.17,-R*0.36,R*0.11,R*0.11);
   const open=R*(0.12+gn*(0.28+ph*0.05)), mw=R*0.66, my=R*0.28;
-  ctx.fillStyle=MAW; ctx.beginPath(); ctx.ellipse(0,my,mw,open+R*0.16,0,0,TAU); ctx.fill();
-  ctx.fillStyle=TT; ctx.beginPath(); ctx.ellipse(0,my+open*0.35,mw*0.6,open*0.65+R*0.05,0,0,TAU); ctx.fill();
-  ctx.fillStyle=T2; ctx.beginPath(); ctx.ellipse(0,my+open*0.5,mw*0.32,open*0.38+R*0.03,0,0,TAU); ctx.fill();
-  ctx.fillStyle=W; const nT=7;
+  g.fillStyle=MAW; g.beginPath(); g.ellipse(0,my,mw,open+R*0.16,0,0,TAU); g.fill();
+  g.fillStyle=TT; g.beginPath(); g.ellipse(0,my+open*0.35,mw*0.6,open*0.65+R*0.05,0,0,TAU); g.fill();
+  g.fillStyle=T2; g.beginPath(); g.ellipse(0,my+open*0.5,mw*0.32,open*0.38+R*0.03,0,0,TAU); g.fill();
+  g.fillStyle=W; const nT=7;
   for(let i=0;i<nT;i++){ const fx=-mw*0.84+i*(mw*1.68/(nT-1)), fw=mw*0.13;
-    ctx.beginPath(); ctx.moveTo(fx-fw/2,my-open-R*0.03); ctx.lineTo(fx+fw/2,my-open-R*0.03); ctx.lineTo(fx,my-open+R*0.13); ctx.closePath(); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(fx-fw/2,my+open+R*0.05); ctx.lineTo(fx+fw/2,my+open+R*0.05); ctx.lineTo(fx,my+open-R*0.11); ctx.closePath(); ctx.fill();
-  }
-  // слюна (тянется/капает)
-  ctx.strokeStyle='rgba(220,232,205,0.5)'; ctx.lineWidth=R*0.03; ctx.lineCap='round';
-  for(let i=0;i<2;i++){ const dx=(i?1:-1)*mw*0.42, dl=R*(0.08+((t*0.7+i*0.5)%1)*0.5); ctx.beginPath(); ctx.moveTo(dx,my-open+R*0.12); ctx.lineTo(dx,my-open+R*0.12+dl); ctx.stroke(); }
-  // вспышка урона
-  if(flashing){ ctx.globalAlpha=clamp(e.flash*4,0,0.5); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.ellipse(0,-R*0.05,R*0.92,R*0.96,0,0,TAU); ctx.fill(); ctx.globalAlpha=1; }
-  ctx.restore();
-};
+    g.beginPath(); g.moveTo(fx-fw/2,my-open-R*0.03); g.lineTo(fx+fw/2,my-open-R*0.03); g.lineTo(fx,my-open+R*0.13); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(fx-fw/2,my+open+R*0.05); g.lineTo(fx+fw/2,my+open+R*0.05); g.lineTo(fx,my+open-R*0.11); g.closePath(); g.fill(); }
+  g.strokeStyle='rgba(220,232,205,0.5)'; g.lineWidth=R*0.03; g.lineCap='round';
+  for(let i=0;i<2;i++){ const dx=(i?1:-1)*mw*0.42, dl=R*(0.08+((t*0.7+i*0.5)%1)*0.5); g.beginPath(); g.moveTo(dx,my-open+R*0.12); g.lineTo(dx,my-open+R*0.12+dl); g.stroke(); }
+  if(flashing){ g.globalAlpha=clamp(e.flash*4,0,0.5); g.fillStyle='#fff'; g.beginPath(); g.ellipse(0,-R*0.05,R*0.92,R*0.96,0,0,TAU); g.fill(); g.globalAlpha=1; }
+  g.restore();
+}); };
 function drawEnemy(e){
   const p=run.p;
   {
