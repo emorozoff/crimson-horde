@@ -407,7 +407,7 @@ body.ingame,body.ingame *{cursor:none!important;}
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.45';
+const VERSION='0.48';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -444,7 +444,7 @@ addEventListener('resize',resize); resize();
 
 let state='menu';      // menu | shop | settings | playing | paused | levelup | dead
 let run=null;          // состояние текущего забега
-let shake=0;
+let shake=0, _shkX=0, _shkY=0, _shkLast=0;
 function shakeAdd(p){shake=Math.min(15,shake+p);}
 let hitStop=0;
 function hitStopAdd(t){hitStop=Math.max(hitStop,Math.min(0.09,t));} // короткий слоумо на крупных ударах
@@ -846,6 +846,20 @@ function buildSprites(){
       '.pPewePp.','.pPPPPPp.','..pPPPp..','..pPPPp..','...ppp...','...p.p...']},
     gnat:{s:3,pal:{b:'#3a1230',w:'#7c5a8a',e:'#ff4060'},rows:[
       'w...w','.bbb.','.beb.','.www.']},
+    ghoul:{s:3,pal:{a:'#2c3a22',b:'#54663a',c:'#7c9050',e:'#ff3838',m:'#181006'},rows:['...bbb...','..bbbbb..','.bbcccbb.','.bcececb.','.bbcccbb.','.bbmmmbb.','a.bbbbb.a','abbbbbbba','.bbb.bbb.','.bb...bb.','.b.....b.']},
+    skeleton:{s:3,pal:{b:'#d8d2c2',k:'#2a241c',e:'#ff5050'},rows:['..bbbbb..','.bbbbbbb.','.bekkkeb.','.bbkkkbb.','.bbbbbbb.','..bbbbb..','...bbb...','.bb.b.bb.','.b.b.b.b.','.b.....b.']},
+    drowned:{s:3,pal:{b:'#274a52',c:'#3a6e74',h:'#5a9098',e:'#a0ffe0',m:'#0c1c20'},rows:['..ccc..','.cbbbc.','cbhbhbc','cbebebc','cbbbbbc','cbmmmbc','cbbbbbc','.cbbbc.','.c...c.']},
+    larva:{s:3,pal:{h:'#d8c0a0',b:'#b89878',e:'#ff6060'},rows:['.hhh.','hbebh','hbbbh','hbbbh','.hhh.']},
+    knight:{s:3,pal:{s:'#7a828e',S:'#4a525e',d:'#2a2e36',e:'#ff4040',g:'#c0c8d2'},rows:['..ggg..','.gSSSg.','.SeSeS.','.SSSSS.','dSSSSSd','dSsssSd','.SsssS.','.SS.SS.','.dd.dd.']},
+    hound:{s:3,pal:{d:'#3a1410',b:'#5e221a',c:'#7e342a',e:'#ff5020',m:'#140605'},rows:['..........','b..bb..b..','bb.bbbb.cc','.bbcccbeb.','.bbcccccb.','dbbbbbbbbd','.b.b..b.b.','.d.d..d.d.']},
+    bomber:{s:3,pal:{r:'#7e2418',R:'#a83422',y:'#ffd040',e:'#ff8020',m:'#1a0805'},rows:['...yyy...','..rRRRr..','.rRRRRRr.','rRReyeRRr','rRRyyyRRr','rRReyeRRr','.rRRRRRr.','..rRRRr..','...r.r...']},
+    archer:{s:3,pal:{b:'#c8c2b0',k:'#241e16',e:'#ff5050',w:'#7a5a30'},rows:['..bbb.w','.bkbkbw','.bbbbww','.bbb.w.','wbbbbw.','wbbbbw.','.b.b.w.','.b.b.w.','.b...b.']},
+    cultist:{s:3,pal:{p:'#3a1c4a',P:'#5e2e74',k:'#16081e',e:'#d040ff',h:'#7a4a9e'},rows:['...ppp...','..pPPPp..','.pPkkkPp.','.pkekekp.','.pPkkkPp.','.pPPPPPp.','pPPPPPPPp','.pPPPPPp.','.pP...Pp.','.pp...pp.']},
+    spider:{s:3,pal:{d:'#241018',b:'#4a1e2e',c:'#6e2e44',e:'#ff3060'},rows:['d.d...d.d','.dd.b.dd.','..bccccb.','.bcececb.','.bcccccb.','..bcccb..','.dd.b.dd.','d.d...d.d']},
+    ogre:{s:4,pal:{b:'#5a6e3a',c:'#7e944e',H:'#d8cfc4',e:'#ff2840',m:'#1c2410'},rows:['.H........H.','.HH......HH.','..bbbbbbbb..','.bbccccccbb.','.bcceeeeccb.','.bcceeeeccb.','.bccccccccb.','.bcmmmmmmcb.','.bbccccccbb.','..bbbbbbbb..','..bb....bb..']},
+    wraith:{s:3,pal:{w:'#3a4a6e',W:'#5a6e9a',c:'#8aa0d0',e:'#80ffff'},rows:['...WWW...','..WcccW..','.WcececW.','.WcccccW.','.WcccccW.','.wWcccWw.','..wWcWw..','...wcw...','..w.w.w..']},
+    harpy:{s:3,pal:{w:'#5a3a2e',W:'#7e5440',b:'#2e1c16',c:'#a87858',e:'#ffd040'},rows:['W.........W','.WW.bbb.WW.','..WbececbW.','...bcccb...','...wbbbw...','....b.b....']},
+    beetle:{s:3,pal:{d:'#1a1408',b:'#3a2e14',c:'#5e4a1e',H:'#8a7030',e:'#ff5030'},rows:['..dddd..','.dHHHHd.','dccccccd','dceccecd','dccccccd','dcddddcd','.d.dd.d.','d.d..d.d']},
   };
   for(const id in ENEMY_MAPS){
     const d=ENEMY_MAPS[id];
@@ -888,6 +902,7 @@ function buildSprites(){
     pact:ico(['.PPPPPPP...','.PpppppP...','.Pp...pP...','.Pp.k.pP...','.Pp...pP...','.PpppppP...','.PPPPPPP...']),
     hunger:ico(['.bbbbbbb...','.bB.g.Bb...','.bBgggBb...','.bB.g.Bb...','.bBBBBBb...','.bbbbbbb...']),
     alch:ico(['....ss.....','....cc.....','...cccc....','..cmmmmc...','..cmmmmc...','..cmmmmc...','...cmmc....']),
+    ward:ico(['.ggggggggg.','gcccccccccg','gcccclccccg','gclllllllcg','gcccclccccg','gcccccccccg','.gcccccccg.','..gcccccg..','...gcccg...','....ggg....']),
     bell:ico(['.....gg......','.....gg......','....lgggg....','...lggggGg...','..lgggggGGg..','.lggggggGGGg.','.ggggggggggg.','.ggggggggggg.','.....GG......']),
     lantern:ico(['.....nn......','....nnnn.....','...nSWWSn....','..nSWyyWSn...','..nSWyyWSn...','..nSWyyWSn...','...nSWWSn....','....nnnn.....']),
     syn:ico(['.....g.....','..g..g..g..','...ggggg...','..ggg.ggg..','...gg.gg...','..g.....g..']),
@@ -1190,9 +1205,23 @@ const ETYPES={
   brute:  {r:24, hp:150, spd:30,  dmg:22, xp:8,   behav:'tank'},
   warper: {r:12, hp:34,  spd:62,  dmg:12, xp:4,   behav:'warp'},
   gnat:   {r:6,  hp:4,   spd:150, dmg:4,  xp:1,   behav:'swarm'},
+  ghoul: {r:14,hp:24,spd:64,dmg:9,xp:1,behav:'chase'},
+  skeleton: {r:12,hp:16,spd:70,dmg:8,xp:1,behav:'chase'},
+  drowned: {r:15,hp:36,spd:44,dmg:11,xp:2,behav:'chase'},
+  larva: {r:8,hp:8,spd:52,dmg:4,xp:1,behav:'hop'},
+  knight: {r:16,hp:130,spd:34,dmg:16,xp:6,behav:'tank'},
+  hound: {r:12,hp:30,spd:140,dmg:13,xp:4,behav:'fast'},
+  bomber: {r:15,hp:24,spd:58,dmg:6,xp:3,behav:'exploder'},
+  archer: {r:12,hp:24,spd:64,dmg:9,xp:3,behav:'ranged'},
+  cultist: {r:13,hp:30,spd:60,dmg:10,xp:4,behav:'ranged'},
+  spider: {r:13,hp:28,spd:82,dmg:8,xp:2,behav:'hop'},
+  ogre: {r:26,hp:280,spd:26,dmg:26,xp:12,behav:'tank'},
+  wraith: {r:13,hp:30,spd:70,dmg:12,xp:4,behav:'warp'},
+  harpy: {r:11,hp:18,spd:122,dmg:9,xp:2,behav:'swarm'},
+  beetle: {r:14,hp:42,spd:48,dmg:10,xp:2,behav:'chase'},
   boss:   {r:42, hp:1500,spd:42,  dmg:20, xp:120, behav:'boss'},
 };
-const ENAMES={zombie:'Упыри',bat:'Нетопыри',slime:'Слизни',spitter:'Плевуны',brute:'Громилы',warper:'Бесы',gnat:'Мошкара',elite:'Элита',boss:'Боссы'};
+const ENAMES={zombie:'Упыри',bat:'Нетопыри',slime:'Слизни',spitter:'Плевуны',brute:'Громилы',warper:'Бесы',gnat:'Мошкара',ghoul:'Гули',skeleton:'Скелеты',drowned:'Утопленники',larva:'Личинки',knight:'Латники',hound:'Гончие',bomber:'Бомбы',archer:'Лучники',cultist:'Культисты',spider:'Пауки',ogre:'Огры',wraith:'Призраки',harpy:'Гарпии',beetle:'Жуки',elite:'Элита',boss:'Боссы'};
 const ENEMY_INFO={
   zombie:{name:'Упырь',desc:'Медлительный мертвец. Прёт напрямую — берёт числом.'},
   bat:{name:'Нетопырь',desc:'Быстрый рой, летит зигзагом. В стае опасен.'},
@@ -1201,6 +1230,20 @@ const ENEMY_INFO={
   brute:{name:'Громила',desc:'Бронированный таран. Иммунен к отбрасыванию, в ярости ускоряется.'},
   warper:{name:'Бес',desc:'Телепортируется к охотнику и бьёт рывком.'},
   gnat:{name:'Мошкара',desc:'Крошечный летучий рой. По одной — ничто, тучей — беда.'},
+  ghoul:{name:'Гуль',desc:'Голодный мертвец, прыткее упыря. Прёт напрямую.'},
+  skeleton:{name:'Скелет',desc:'Костяк, что не знает усталости. Берёт числом.'},
+  drowned:{name:'Утопленник',desc:'Разбухший утопший. Медленный, но живучий.'},
+  larva:{name:'Личинка',desc:'Бледная личинка трупоеда. Крошечная, но кусачая.'},
+  knight:{name:'Скелет-латник',desc:'Костяк в ржавой броне. Таран, иммунный к отбрасыванию.'},
+  hound:{name:'Адская гончая',desc:'Бешеная тварь. Мчит и бросается рывками.'},
+  bomber:{name:'Зомби-бомба',desc:'Разбухший от газа. Лопается огнём при гибели.'},
+  archer:{name:'Скелет-лучник',desc:'Костяной стрелок. Бьёт стрелами издалека.'},
+  cultist:{name:'Культист',desc:'Фанатик в рясе. Мечет тёмные сгустки.'},
+  spider:{name:'Паук',desc:'Гнездовой паук. При гибели рассыпается выводком.'},
+  ogre:{name:'Огр',desc:'Гора гнилой плоти. Бьёт сокрушительно, прёт неумолимо.'},
+  wraith:{name:'Призрак',desc:'Мерцающий дух. Является рывком сквозь пустоту.'},
+  harpy:{name:'Гарпия',desc:'Крылатая бестия. Налетает стаей с высоты.'},
+  beetle:{name:'Трупный жук',desc:'Падальщик в хитине. Медленный, но крепкий.'},
   boss:{name:'Боссы',desc:'Носферату и его слуги. Приходят каждые 3 минуты, бьются по фазам.'},
 };
 const WSTAT={bolt:'Арбалет',orbit:'Серебряные клинки',chain:'Цепная молния',aura:'Кадило',scythe:'Метательный крест',mortar:'Святая вода',bell:'Колокол',lantern:'Фонарь',sword:'Меч веры',bleed:'Кровотечение',shatter:'Кара света',rift:'Огненные разломы',nova_rev:'Святые мощи',bomb:'Бомба'};
@@ -1262,7 +1305,7 @@ function newRun(){
     heartMul:1, heartDrop:0,
     weapons:{bolt:0,orbit:0,chain:0,aura:0,scythe:0,mortar:0,bell:0,lantern:0,sword:0},
     wt:{bolt:0.4,chain:0,aura:0,scythe:0.8,mortar:1.2,bell:1.2,lantern:0}, orbA:0, auraR:0,
-    rings:[], lanternAim:0, bladePts:[], wardEvery:6.5, wardCD:6.5, wardReady:false, swords:[],
+    rings:[], lanternAim:0, bladePts:[], wardEvery:6.5, wardCD:6.5, wardReady:false, swords:[], fieldXp:0,
     taken:{}, leechPool:0,
     rerolls:(mb.rerolls||0)+(m.rerolls||0), banishes:1, banished:{}, banishMode:false, evo:{}, fused:{},
     spawnT:1.4, waveT:55, eliteT:115, bossT:180, bossIdx:0, bossTier:0, bossRef:null,
@@ -1539,7 +1582,7 @@ function damageEnemy(e,dmg,src,kx,ky){
   run.stats.dmg[src]=(run.stats.dmg[src]||0)+dmg;
   if(run.fused.pyre&&src==='scythe'){ e.burnT=Math.max(e.burnT||0,2.2); e.burnD=Math.max(e.burnD||0,dmg*0.35); } // Крестный огонь: кресты поджигают
   if(run.p.leech>0) run.leechPool+=dmg*0.02*run.p.leech;
-  if(kx&&!e.boss&&!e.elite&&e.type!=='brute'){e.kx+=kx;e.ky+=ky;}
+  if(kx&&!e.boss&&!e.elite&&e.behav!=='tank'){e.kx+=kx;e.ky+=ky;}
   if(meta.settings.dmgnum&&(src!=='aura'||chance(0.3))) addText(e.x+rand(-8,8),e.y-e.r-6,dmg,crit?'#ffb938':'#fff',crit?22:15);
   if(src!=='lantern') A.hitE(); // фонарь жжёт светом — без ритмичного звука удара
   if(src!=='aura') addBurst(e.x,e.y,'#c22038',2,70,0.3,2);
@@ -1571,9 +1614,9 @@ function killEnemy(e){
     _shatterActive=false;
   }
   // слизень делится
-  if(e.type==='slime'&&e.gen<2&&!e.elite){
+  if((e.type==='slime'||e.type==='spider')&&e.gen<2&&!e.elite){
     for(let i=0;i<2;i++){
-      const c=spawnEnemy('slime',e.x+rand(-10,10),e.y+rand(-10,10),{noScale:true});
+      const c=spawnEnemy(e.type,e.x+rand(-10,10),e.y+rand(-10,10),{noScale:true});
       c.gen=e.gen+1;
       c.maxhp=c.hp=Math.max(4,Math.round(e.maxhp*0.42));
       c.r=Math.max(7,Math.round(e.r*0.68));
@@ -1583,11 +1626,18 @@ function killEnemy(e){
       c.kx=rand(-140,140); c.ky=rand(-140,140);
     }
   }
+  if(e.behav==='exploder'&&!e.boss){ // зомби-бомба: лопается огнём, опасна для игрока
+    const er=74;
+    if(dist2(e.x,e.y,run.p.x,run.p.y)<(er+run.p.r)*(er+run.p.r)) damagePlayer(e.dmg*2.2,'bomb');
+    addBurst(e.x,e.y,'#ff8a30',26,260,0.6,3.2); shakeAdd(6); A.nova();
+  }
   // Босс НЕ роняет опыт сам — награда за босса = магнит, собирающий накопленный за бой полевой XP.
   if(!e.boss) gemDrop(e.x,e.y,e.xp);
   if(!e.boss&&!e.elite){
     if(chance(0.0023+run.heartDrop)) run.gems.push({x:e.x,y:e.y,v:0,kind:'heart',mag:false,vx:0,vy:0,t:0});
-    if(chance(0.012)) run.gems.push({x:e.x,y:e.y,v:irand(3,9),kind:'coin',mag:false,vx:0,vy:0,t:0});
+    // монеты по силе врага: мясо почти не даёт, крупные/опасные — выплаты
+    const cc=0.004+e.xp*0.0035;
+    if(chance(cc)) run.gems.push({x:e.x,y:e.y,v:irand(1,2+Math.round(e.xp*1.2)),kind:'coin',mag:false,vx:0,vy:0,t:0});
   }
   if(e.elite) {
     run.stats.elites++;
@@ -1723,35 +1773,22 @@ function gameOver(){
 window.__xplog=[]; window.__xpLogOn=false;
 function xplog(src,fn){ if(!window.__xpLogOn||!run) return; const e=Object.assign({t:Math.round(run.time*10)/10,src,lvl:run.level},fn()); window.__xplog.push(e); if(window.__xplog.length>250) window.__xplog.shift(); }
 function fieldXp(){ let s=0; for(const g of run.gems) if(g.kind==='xp') s+=g.v; return s; }
+// ЛИМИТ ПОЛЯ ≈ 3 уровня от ТЕКУЩЕГО (в «сырых» единицах кристаллов; xpMul применяется при подборе).
+// Поле не может накопить больше → магнит физически не принесёт «лавину», максимум ~3 карточки, и то растянуто.
+function xpFieldCap(){ const L=run.level; return (xpNeeded(L)+xpNeeded(L+1)+xpNeeded(L+2))/Math.max(0.5,run.xpMul); }
 function gemDrop(x,y,val){
-  // ЧЕСТНАЯ ЦЕННОСТЬ ОПЫТА: множитель времени ЗАПЕКАЕМ В МОМЕНТ ДРОПА (а не при подборе).
-  // Иначе старый кристалл, собранный магнитом позже, пересчитывается по поздней ставке = инфляция «лавины».
-  // Кристалл теперь стоит ровно столько, сколько заработано в момент убийства.
-  const rawVal=val;
-  val=Math.max(1,Math.round(val*(1+run.time/60*0.12)));
-  const baked=val;
-  // ПОЛЕ НЕ КОПИТ БЕСКОНЕЧНО: число xp-кристаллов ограничено, ценность каждого — с потолком.
-  const CAP=100, MAXGEMS=40;
-  let xpCount=0, best=null, bd=170*170;
-  for(const g of run.gems){
-    if(g.kind!=='xp') continue;
-    xpCount++;
-    if(g.v<CAP){ const d=dist2(x,y,g.x,g.y); if(d<bd){bd=d;best=g;} }
-  }
-  if(xpCount>=MAXGEMS){
-    // поле насыщено: сливаем в ближайший недозаполненный (с потолком)
-    if(best) best.v=Math.min(CAP, best.v+val);
-    xplog('gemDrop',()=>({raw:rawVal,xp:baked,merged:1,field:fieldXp()}));
+  if(val<=0||!run) return;
+  // ценность кристалла фиксируется ПРИ ДРОПЕ (множитель времени запечён, честно, без поздней инфляции)
+  const value=Math.max(1,Math.round(val*(1+run.time/60*0.12)));
+  // считаем число xp-кристаллов (перф-страховка) — run.fieldXp ведём инкрементально
+  let xpCount=0; for(const g of run.gems) if(g.kind==='xp') xpCount++;
+  if(run.fieldXp+value>xpFieldCap() || xpCount>=300){ // поле полно на ~3 ур. (или перф-кап) — излишек теряется
+    xplog('gemDrop',()=>({skip:1,field:Math.round(run.fieldXp),cap:Math.round(xpFieldCap())}));
     return;
   }
-  const denoms=[100,50,20,5,1];
-  for(const d of denoms){
-    while(val>=d){
-      val-=d;
-      run.gems.push({x:x+rand(-14,14),y:y+rand(-14,14),v:d,kind:'xp',mag:false,vx:0,vy:0,t:rand(0,TAU)});
-    }
-  }
-  xplog('gemDrop',()=>({raw:rawVal,xp:baked,field:fieldXp()}));
+  run.fieldXp+=value;
+  run.gems.push({x:x+rand(-12,12),y:y+rand(-12,12),v:value,kind:'xp',mag:false,vx:0,vy:0,t:rand(0,TAU)});
+  xplog('gemDrop',()=>({xp:value,field:Math.round(run.fieldXp),cap:Math.round(xpFieldCap())}));
 }
 function addXP(v){
   v=Math.max(1,Math.round(v*run.xpMul));
@@ -1759,6 +1796,8 @@ function addXP(v){
   run.xp+=v;
   let leveled=false;
   while(run.xp>=run.xpNext){
+    // ЗАПЛАТКА (баг опыта, см. roadmap): не больше 3 уровней за раз — очередь карт не растёт выше 3, излишек XP сбрасывается
+    if(run.lvlQueue>=3){ run.xp=Math.min(run.xp,run.xpNext-1); break; }
     run.xp-=run.xpNext; run.level++; run.xpNext=xpNeeded(run.level);
     run.lvlQueue++; leveled=true;
   }
@@ -1920,27 +1959,44 @@ function fireWeapons(dt){
   // --- фонарь: луч в сторону ближайшего врага ---
   if(wl.lantern>0){
     const lv=wl.lantern, evo=run.evo.lantern;
-    const spear=run.fused.spear; // Копьё света: фонарь+арбалет = мощный пронзающий луч
-    let tgt=null,bd=1e9; const range=(150+22*lv)*(evo?1.4:1)*(spear?1.6:1);
+    const spear=run.fused.spear; // Копьё света: тонкий длинный луч сквозь всех на линии
+    let tgt=null,bd=1e9; const range=(150+22*lv)*(evo?1.4:1)*(spear?6:1);
     for(const e of run.en){ if(e.dead) continue; const d=dist2(p.x,p.y,e.x,e.y); if(d<bd){bd=d;tgt=e;} }
     if(tgt&&bd<range*range){
-      run.lanternAim=Math.atan2(tgt.y-p.y,tgt.x-p.x);
+      // разворот к ближайшему врагу НЕ мгновенный — макс ~360°/с
+      const targetA=Math.atan2(tgt.y-p.y,tgt.x-p.x);
+      const da=((targetA-run.lanternAim+Math.PI*3)%(Math.PI*2))-Math.PI, maxTurn=TAU*dt;
+      run.lanternAim = Math.abs(da)<=maxTurn ? targetA : run.lanternAim+Math.sign(da)*maxTurn;
       wt.lantern-=dt;
       if(wt.lantern<=0){
-        wt.lantern=spear?0.1:0.22;
-        const half=(evo?Math.PI:0.18+0.08*lv), dmg=(2+1.1*lv)*p.dmgMul*(evo?1.3:1)*(spear?2.4:1); // урон фонаря ×0.5
-        forNear(p.x,p.y,range+46,e=>{
-          if(e.dead) return;
-          const d2=dist2(p.x,p.y,e.x,e.y); if(d2>range*range) return;
-          const a=Math.atan2(e.y-p.y,e.x-p.x), da=Math.abs(((a-run.lanternAim+Math.PI*3)%(Math.PI*2))-Math.PI);
-          if(da<=half){ damageEnemy(e,dmg,'lantern'); if(chance(0.2)) addBurst(e.x,e.y,'#ffe89a',1,40,0.2,1.6); }
-        });
+        if(spear){
+          // КОПЬЁ СВЕТА: тонкая линия, уходит чуть за экран, жжёт ВСЕХ на пути
+          wt.lantern=0.09;
+          const a=run.lanternAim, ca=Math.cos(a), sa=Math.sin(a);
+          const beamLen=Math.hypot(W,H)*0.62, halfW=15, dmg=(9+5*lv)*p.dmgMul;
+          run.lanternBeam={x:p.x,y:p.y,a,len:beamLen,t:0.09,max:0.09};
+          for(const e of run.en){
+            if(e.dead) continue;
+            const dx=e.x-p.x, dy=e.y-p.y, proj=dx*ca+dy*sa;
+            if(proj<0||proj>beamLen) continue;
+            if(Math.abs(-dx*sa+dy*ca)<=halfW+e.r){ damageEnemy(e,dmg,'lantern'); if(chance(0.25)) addBurst(e.x,e.y,'#ffe89a',1,40,0.2,1.6); }
+          }
+        } else {
+          wt.lantern=0.22;
+          const half=(evo?Math.PI:0.18+0.08*lv), dmg=(2+1.1*lv)*p.dmgMul*(evo?1.3:1); // урон фонаря ×0.5
+          forNear(p.x,p.y,range+46,e=>{
+            if(e.dead) return;
+            const d2=dist2(p.x,p.y,e.x,e.y); if(d2>range*range) return;
+            const a=Math.atan2(e.y-p.y,e.x-p.x), da=Math.abs(((a-run.lanternAim+Math.PI*3)%(Math.PI*2))-Math.PI);
+            if(da<=half){ damageEnemy(e,dmg,'lantern'); if(chance(0.2)) addBurst(e.x,e.y,'#ffe89a',1,40,0.2,1.6); }
+          });
+        }
       }
     } else run.lanternAim=run.lanternAim;
   }
   // --- Стальная буря (Клинки+Меч): один огромный медленный клинок, сносящий почти всех ---
   if(run.fused.steel){
-    const R=132, hitR=56, dmg=(150+34*Math.max(wl.orbit,wl.sword))*p.dmgMul;
+    const R=132, hitR=56, dmg=(300+68*Math.max(wl.orbit,wl.sword))*p.dmgMul; // ×2 урон
     if(!run.swords.length) run.swords.push({x:p.x,y:p.y,oang:0,ang:0});
     while(run.swords.length>1) run.swords.pop();
     const sw=run.swords[0];
@@ -1953,8 +2009,8 @@ function fireWeapons(dt){
   if(wl.sword>0&&!run.fused.steel){
     const lv=wl.sword, evo=run.evo.sword;
     const cnt=1+(lv>=3?1:0)+(evo?2:0);            // 1 → 2 на lv3 → +2 эво
-    const R=150+18*lv, spd=340+28*lv;             // радиус действия и скорость
-    const dmg=(20+10*lv)*p.dmgMul*(evo?1.5:1), hitR=evo?24:18;
+    const R=150+18*lv, spd=170+14*lv;             // радиус действия и скорость (скорость ×0.5)
+    const dmg=(10+5*lv)*p.dmgMul*(evo?1.5:1), hitR=evo?24:18; // урон ×0.5
     while(run.swords.length<cnt) run.swords.push({x:p.x,y:p.y,ang:0});
     while(run.swords.length>cnt) run.swords.pop();
     for(let si=0;si<run.swords.length;si++){
@@ -2064,7 +2120,12 @@ function updateEnemies(dt){
     else switch(e.behav){
       default:
       case 'chase':
+      case 'exploder': // бомба — обычная погоня, взрыв в killEnemy
         mvx=dx/d*e.spd; mvy=dy/d*e.spd; break;
+      case 'fast':{ // гончая — рывками
+        const lunge=Math.sin(e.t*2.2+e.id)>0.65?1.8:0.85;
+        mvx=dx/d*e.spd*lunge; mvy=dy/d*e.spd*lunge; break;
+      }
       case 'swarm':{
         const a=Math.atan2(dy,dx)+Math.sin(e.t*3.2+e.id)*0.65;
         mvx=Math.cos(a)*e.spd; mvy=Math.sin(a)*e.spd; break;
@@ -2313,13 +2374,15 @@ function diffNow(){
   };
 }
 function pickType(t){
+  // ФОН = трикл дешёвого мяса; опасные типы приходят КОНЕЧНЫМИ волнами (doWave), а не вечно
   const L=run.loc;
   const w=[['zombie',10]];
-  if(t>25)w.push(['bat',(L==='crypt'?9:1)*(t<90?0.6:1)+(t<90?4.5:7)]);
-  if(t>70||L==='swamp')w.push(['slime',L==='swamp'?13:6]);
-  if(t>110)w.push(['spitter',L==='swamp'?6.5:5]);
-  if(t>160)w.push(['brute',(L==='ash'||L==='inferno')?(L==='inferno'?6:4.5):3.5]);
-  if(t>210)w.push(['warper',L==='crypt'?8:((L==='ash'||L==='inferno')?5.5:4)]);
+  if(t>30)w.push(['ghoul',5]);
+  if(t>60)w.push(['skeleton',5]);
+  if(t>40)w.push(['larva',(L==='swamp'||L==='crypt')?5:3]);
+  if(L==='swamp'||L==='crypt')w.push(['drowned',6]); else if(t>140)w.push(['drowned',2]);
+  if(t>100)w.push(['beetle',3]);
+  if(t>50)w.push(['gnat',2]);
   let total=0; for(const x of w) total+=x[1];
   let r=Math.random()*total;
   for(const x of w){r-=x[1];if(r<=0)return x[0];}
@@ -2336,24 +2399,37 @@ function spawnAt(type,o){
   return spawnEnemy(type,p.x+Math.cos(a)*R,p.y+Math.sin(a)*R,o);
 }
 function doWave(t){
+  // КОНЕЧНЫЕ тематические волны: опасный тип приходит ГРУППОЙ — перебил, угроза снята
   const opts=['horde'];
-  if(t>60)opts.push('ring');
+  if(t>45)opts.push('bats');
+  if(t>65)opts.push('hounds');
+  if(t>85)opts.push('spiders');
   if(t>100)opts.push('slimes');
-  if(t>150)opts.push('spitters');
-  if(t>220)opts.push('brutes');
+  if(t>115)opts.push('archers');
+  if(t>135)opts.push('spitters');
+  if(t>155)opts.push('bombers');
+  if(t>180)opts.push('knights');
+  if(t>205)opts.push('cultists');
+  if(t>230)opts.push('warpers');
+  if(t>260)opts.push('ogre');
+  if(t>175)opts.push('brutes');
   const o=pick(opts), p=run.p;
-  if(o==='horde'){ for(let i=0;i<irand(8,13);i++) spawnAt('zombie'); }
-  else if(o==='ring'){
-    const n=22;
-    for(let i=0;i<n;i++){
-      const a=i/n*TAU, R=Math.hypot(W,H)/2+80;
-      spawnEnemy('bat',p.x+Math.cos(a)*R,p.y+Math.sin(a)*R);
-    }
-    showBanner('','стая окружает!');
+  const ring=(type,n)=>{ for(let i=0;i<n;i++){ const a=i/n*TAU, R=Math.hypot(W,H)/2+72; spawnEnemy(type,p.x+Math.cos(a)*R,p.y+Math.sin(a)*R); } };
+  switch(o){
+    case 'horde':   for(let i=0;i<irand(9,14);i++) spawnAt('zombie'); break;
+    case 'bats':    ring('bat',22); showBanner('','стая окружает!'); break;
+    case 'hounds':  for(let i=0;i<irand(5,7);i++) spawnAt('hound'); showBanner('','свора мчится!'); break;
+    case 'spiders': for(let i=0;i<irand(5,8);i++) spawnAt('spider'); showBanner('','выводок пауков'); break;
+    case 'slimes':  for(let i=0;i<irand(6,9);i++) spawnAt('slime'); break;
+    case 'archers': for(let i=0;i<irand(5,7);i++) spawnAt('archer'); showBanner('','залп стрел'); break;
+    case 'spitters':for(let i=0;i<irand(5,8);i++) spawnAt('spitter'); showBanner('','кислотный плевок'); break;
+    case 'bombers': for(let i=0;i<irand(5,8);i++) spawnAt('bomber'); showBanner('','бомбы ползут!'); break;
+    case 'knights': for(let i=0;i<irand(3,4);i++) spawnAt('knight'); showBanner('','латники наступают'); break;
+    case 'cultists':for(let i=0;i<irand(4,6);i++) spawnAt('cultist'); showBanner('','культ собирается'); break;
+    case 'warpers': for(let i=0;i<irand(4,6);i++) spawnAt('warper'); showBanner('','бесы мерцают'); break;
+    case 'brutes':  for(let i=0;i<irand(3,5);i++) spawnAt('brute'); showBanner('','земля дрожит...'); break;
+    case 'ogre':    for(let i=0;i<irand(1,2);i++) spawnAt('ogre'); showBanner('','ОГР!'); break;
   }
-  else if(o==='slimes'){ for(let i=0;i<irand(6,9);i++) spawnAt('slime'); }
-  else if(o==='spitters'){ for(let i=0;i<irand(5,8);i++) spawnAt('spitter'); }
-  else { for(let i=0;i<irand(3,5);i++) spawnAt('brute'); showBanner('','земля дрожит...'); }
 }
 function director(dt){
   const t=run.time;
@@ -2380,9 +2456,11 @@ function director(dt){
     if(run.eliteT<=0){
       run.eliteT=run.loc==='inferno'?46:(run.loc==='ash'?60:78);
       const n=1+Math.floor(t/280);
-      const pool=['zombie','slime','spitter'];
-      if(t>160)pool.push('brute');
-      if(t>210)pool.push('warper');
+      const pool=['ghoul','skeleton','spider','hound','beetle'];
+      if(t>130)pool.push('archer','spitter');
+      if(t>170)pool.push('knight','brute');
+      if(t>210)pool.push('cultist','warper');
+      if(t>260)pool.push('ogre');
       for(let i=0;i<n;i++) spawnAt(pick(pool),{elite:true});
       showBanner('','элита близко...');
     }
@@ -2519,15 +2597,14 @@ function updateGems(dt){
     // магнитятся опыт, золото и сердца; сундук/магнит/бомбу нужно поднять самому
     if((g.kind==='xp'||g.kind==='coin'||g.kind==='heart')&&!g.mag&&d2v<magR*magR){g.mag=true;g.ms=200;}
     if(g.mag){
-      const d=Math.sqrt(d2v)||1;
-      g.ms=Math.min(860,g.ms+1500*dt);
-      g.x+=(p.x-g.x)/d*g.ms*dt;
-      g.y+=(p.y-g.y)/d*g.ms*dt;
+      const d=Math.sqrt(d2v)||1, sp=380; // ПОСТОЯННАЯ скорость (без разгона) — далёкий летит долго
+      g.x+=(p.x-g.x)/d*sp*dt;
+      g.y+=(p.y-g.y)/d*sp*dt;
     }
     if(g.kind==='xp'){
-      if(d2v<26*26){
-        g.dead=true; run.stats.gems++;
-        addXP(g.v); // множитель времени уже запечён в g.v при дропе (честная ценность)
+      if(d2v<24*24){
+        g.dead=true; run.stats.gems++; run.fieldXp=Math.max(0,run.fieldXp-g.v);
+        addXP(g.v); // ценность запечена при дропе; здесь применяется xpMul
         addBurst(g.x,g.y,g.v>=20?'#ff7a92':'#7ad4ff',4,90,0.22,1.8);
         A.pickup();
       }
@@ -2546,7 +2623,7 @@ function updateGems(dt){
         addBurst(g.x,g.y,'#e7c24a',5,90,0.3,2);
       } else if(g.kind==='magnet'){
         let _c=0,_s=0;
-        for(const o of run.gems){ if(o.kind==='xp'||o.kind==='coin'){ if(o.kind==='xp'){_c++;_s+=o.v;} o.mag=true;o.ms=Math.max(o.ms||0,320);} }
+        for(const o of run.gems){ if(o.kind==='xp'||o.kind==='coin'){ if(o.kind==='xp'){_c++;_s+=o.v;} o.mag=true;} }
         xplog('magnet',()=>({swept:_c,xp:_s}));
         A.chestS();
         addText(p.x,p.y-24,'СБОР!','#7ad4ff',18);
@@ -2650,6 +2727,7 @@ function updateFxArr(dt){
   for(const q of run.texts){q.y-=46*dt;q.life-=dt;if(q.life<=0)q.dead=true;}
   for(const q of run.fx){q.t-=dt;if(q.t<=0)q.dead=true;}
   for(const d of run.decals) d.age+=dt;
+  if(run.lanternBeam){ run.lanternBeam.t-=dt; if(run.lanternBeam.t<=0) run.lanternBeam=null; }
 }
 function sweep(arr){let w=0;for(let i=0;i<arr.length;i++){const o=arr[i];if(!o.dead)arr[w++]=o;}arr.length=w;}
 
@@ -2744,7 +2822,16 @@ function drawGround(px,py){
 function drawZones(){
   const p=run.p;
   // луч фонаря
-  if(run.weapons.lantern>0){
+  if(run.fused.spear && run.lanternBeam){
+    // КОПЬЁ СВЕТА: тонкий яркий луч (уходит за экран)
+    const b=run.lanternBeam, al=Math.max(0,b.t/b.max), ex=b.x+Math.cos(b.a)*b.len, ey=b.y+Math.sin(b.a)*b.len;
+    ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.lineCap='round';
+    ctx.strokeStyle='rgba(255,236,150,'+(0.6*al).toFixed(2)+')'; ctx.lineWidth=11;
+    ctx.beginPath(); ctx.moveTo(b.x,b.y); ctx.lineTo(ex,ey); ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,'+(0.95*al).toFixed(2)+')'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(b.x,b.y); ctx.lineTo(ex,ey); ctx.stroke();
+    ctx.restore();
+  } else if(run.weapons.lantern>0){
     const lv=run.weapons.lantern, evo=run.evo.lantern, range=(150+22*lv)*(evo?1.4:1), half=(evo?Math.PI:0.18+0.08*lv);
     ctx.save(); ctx.globalCompositeOperation='lighter';
     const g2=ctx.createRadialGradient(p.x,p.y,8,p.x,p.y,range);
@@ -2987,7 +3074,7 @@ function drawPlayer(){
   ctx.restore();
 }
 function drawBlades(){
-  if(run.weapons.orbit<=0) return;
+  if(run.weapons.orbit<=0||run.fused.steel) return; // при «Стальной буре» клинков нет — только один большой меч
   const p=run.p, lv=run.weapons.orbit, evo=run.evo.orbit;
   const n=(1+lv)+(evo?2:0), rad=(66+8*lv)+(evo?22:0);
   ctx.strokeStyle='rgba(207,214,226,0.10)';
@@ -3009,7 +3096,7 @@ function drawSwords(){
   const spr=SPR.sword;
   for(const sw of run.swords){
     ctx.save(); ctx.translate(sw.x,sw.y); ctx.rotate(sw.ang||0);
-    if(sw.big) ctx.scale(3.3,2.1); // длиннее (по лезвию) и тоньше
+    if(sw.big) ctx.scale(4.1,1.9); // ещё длиннее (по лезвию) и слегка тоньше
     ctx.drawImage(spr,-spr.width/2,-spr.height/2);
     ctx.restore();
   }
@@ -3087,8 +3174,10 @@ function render(){
   let px,py;
   if(run){px=run.p.x;py=run.p.y;}
   else{const t=performance.now()*0.00006;px=Math.cos(t)*250;py=Math.sin(t*1.3)*180;}
-  const shk=shake*meta.settings.shake;
-  const sx=(Math.random()*2-1)*shk, sy=(Math.random()*2-1)*shk;
+  const shk=(state==='playing')?shake*meta.settings.shake/1.5:0; // пауза — без тряски; амплитуда ×(1/1.5)
+  const now=performance.now();
+  if(now-_shkLast>25){ _shkLast=now; _shkX=Math.random()*2-1; _shkY=Math.random()*2-1; } // ~1.5× медленнее
+  const sx=_shkX*shk, sy=_shkY*shk;
   ctx.save();
   ctx.translate(Math.round(W/2-px+sx),Math.round(H/2-py+sy)); // целые пиксели — нет швов между тайлами
   if(run) drawGround(px,py);
@@ -3491,7 +3580,7 @@ const _sprURL={};
 function sprURL(canvas,key){ if(_sprURL[key]!==undefined)return _sprURL[key]; _sprURL[key]=canvas?canvas.toDataURL():''; return _sprURL[key]; }
 function buildBestiary(){
   const g=$('bestGrid'); g.innerHTML='';
-  for(const t of ['zombie','bat','slime','spitter','brute','warper','gnat','boss']){
+  for(const t of ['zombie','ghoul','skeleton','drowned','larva','bat','gnat','harpy','beetle','slime','spider','spitter','archer','cultist','hound','warper','wraith','bomber','knight','brute','ogre','boss']){
     const seen=!!meta.bestiary[t]||(t==='boss'&&meta.stats.bosses>0);
     const info=ENEMY_INFO[t];
     const c=document.createElement('div'); c.className='bcard'+(seen?'':' unseen');
