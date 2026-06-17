@@ -359,6 +359,8 @@ body.ingame,body.ingame *{cursor:none!important;}
     <div class="setrow"><label>ГРОМКОСТЬ</label><input type="range" id="volMaster" min="0" max="100"><span class="setval" id="valMaster"></span></div>
     <div class="setrow"><label>МУЗЫКА</label><input type="range" id="volMusic" min="0" max="100"><span class="setval" id="valMusic"></span></div>
     <div class="setrow"><label>ЭФФЕКТЫ</label><input type="range" id="volSfx" min="0" max="100"><span class="setval" id="valSfx"></span></div>
+    <div class="setsec">ПРОСЛУШАТЬ МУЗЫКУ</div>
+    <div id="musTest"></div>
     <div class="setsec">ИГРА</div>
     <div class="setrow"><label>ТРЯСКА КАМЕРЫ</label><button class="toggle" id="tgShake"></button></div>
     <div class="setrow"><label>HP-БАР У ГЕРОЯ</label><button class="toggle" id="tgHp"></button></div>
@@ -367,7 +369,6 @@ body.ingame,body.ingame *{cursor:none!important;}
     <div class="setrow"><label>СЧЁТЧИК FPS</label><button class="toggle" id="tgFps"></button></div>
     <div class="setrow" style="margin-top:16px"><label style="color:#e07088">СБРОС ПРОГРЕССА</label><button class="btn" id="btnReset" style="padding:6px 18px;font-size:18px;border-color:#7a2433;color:#e07088">×5</button></div>
   </div>
-  <div class="hint" style="font-size:8px;opacity:.4;letter-spacing:0;max-width:88vw;font-family:Arial,sans-serif">музыка: Kevin MacLeod (incompetech.com) CC BY 4.0 · OpenGameArt CC0</div>
   <button class="btn" id="btnSetBack" style="margin-top:10px">НАЗАД</button>
 </div>
 
@@ -407,7 +408,7 @@ body.ingame,body.ingame *{cursor:none!important;}
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.50';
+const VERSION='0.51';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -526,6 +527,12 @@ const A={
     const f=430*Math.pow(1.05946,this.combo);
     this.tone(f,f*1.5,0.06,'sine',0.08);
     this.tone(f*2,f*2,0.045,'triangle',0.028);
+  },
+  coin(){ // «звон» монетки — яркий металлический дзынь (Заход 5)
+    if(!this.thr('cn',40)||!this.ctx)return; const n=this.ctx.currentTime;
+    this.tone(1318,1318,0.07,'square',0.07,n);
+    this.tone(1975,1975,0.17,'triangle',0.055,n+0.05);
+    this.noise(0.04,0.022,5200,n,'highpass');
   },
   heart(){this.tone(420,840,0.22,'sine',0.14); this.tone(630,1260,0.2,'triangle',0.06);},
   hurt(){if(!this.thr('hu',180))return; this.tone(200,48,0.28,'sawtooth',0.2); this.tone(96,38,0.22,'square',0.14); this.noise(0.16,0.12,520);},
@@ -678,7 +685,7 @@ function saveMeta(){
   try{localStorage.setItem('crimson_horde_meta',JSON.stringify(meta));}catch(e){}
 }
 function metaLv(id){return meta.up[id]||0;}
-function metaCost(d){return Math.round(d.base*Math.pow(d.mul,metaLv(d.id)));}
+function metaCost(d){return Math.round(d.base*Math.pow(d.mul,metaLv(d.id))/10);} // цены Склепа ÷10 (Заход 5)
 function metaBonus(){
   return {
     hp:20*metaLv('vit'), dmg:0.06*metaLv('pow'), spd:0.04*metaLv('spd'),
@@ -1648,7 +1655,7 @@ function killEnemy(e){
   if(!e.boss&&!e.elite){
     if(chance(0.0023+run.heartDrop)) run.gems.push({x:e.x,y:e.y,v:0,kind:'heart',mag:false,vx:0,vy:0,t:0});
     // монеты по силе врага: мясо почти не даёт, крупные/опасные — выплаты
-    const cc=0.004+e.xp*0.0035;
+    const cc=(0.004+e.xp*0.0035)/20; // монеты в 20× реже (Заход 5) — редкая, но ценная, «звон» = событие
     if(chance(cc)) run.gems.push({x:e.x,y:e.y,v:irand(1,2+Math.round(e.xp*1.2)),kind:'coin',mag:false,vx:0,vy:0,t:0});
   }
   if(e.elite) {
@@ -2241,7 +2248,7 @@ BOSS_MECH.matron=function(e,dt,dx,dy,d,sf){
   const f=e.hp/e.maxhp;
   e.phase=f>0.5?0:f>0.25?1:2;
   // движение: держит дистанцию, медленно убегает от игрока
-  const want=320, spd=40+e.boss*1.5;
+  const want=320, spd=(40+e.boss*1.5)*1.4; // скорость +40% (Заход 5)
   let mvx=0,mvy=0;
   if(d<want){ mvx=-dx/d*spd; mvy=-dy/d*spd; }
   else if(d>want+170){ mvx=dx/d*spd*0.4; mvy=dy/d*spd*0.4; }
@@ -2252,8 +2259,8 @@ BOSS_MECH.matron=function(e,dt,dx,dy,d,sf){
   e.a2-=dt;
   if(e.a2<=0){
     e.a2=[3.4,2.6,1.9][e.phase];
-    if(gnats<70){
-      const n=[4,6,9][e.phase];
+    if(gnats<210){ // ×3 мошки: потолок 70→210 (Заход 5)
+      const n=[12,18,27][e.phase];
       for(let i=0;i<n;i++){
         const a=rand(0,TAU), rr=e.r+rand(6,28);
         const gg=spawnEnemy('gnat',e.x+Math.cos(a)*rr,e.y+Math.sin(a)*rr,{noScale:true});
@@ -2265,7 +2272,7 @@ BOSS_MECH.matron=function(e,dt,dx,dy,d,sf){
   // вход в фазу 2 (33% HP) — разовый большой выброс
   if(e.phase===2&&!e.burst2){
     e.burst2=true;
-    for(let i=0;i<18;i++){ const a=i/18*TAU; const gg=spawnEnemy('gnat',e.x+Math.cos(a)*30,e.y+Math.sin(a)*30,{noScale:true}); gg.xp=0; gg.kx=Math.cos(a)*210; gg.ky=Math.sin(a)*210; }
+    for(let i=0;i<54;i++){ const a=i/54*TAU; const gg=spawnEnemy('gnat',e.x+Math.cos(a)*30,e.y+Math.sin(a)*30,{noScale:true}); gg.xp=0; gg.kx=Math.cos(a)*210; gg.ky=Math.sin(a)*210; } // ×3 выброс (Заход 5)
     addBurst(e.x,e.y,'#a93a6e',26,200,0.6,3); A.roar(); shakeAdd(8);
   }
 };
@@ -2630,7 +2637,7 @@ function updateGems(dt){
         addBurst(p.x,p.y,'#e82848',10,120,0.4,2.5);
       } else if(g.kind==='coin'){
         run.goldBonus+=g.v;
-        A.pickup();
+        A.coin();
         addText(p.x,p.y-24,'+◆'+g.v,'#e7c24a',15);
         addBurst(g.x,g.y,'#e7c24a',5,90,0.3,2);
       } else if(g.kind==='magnet'){
@@ -2939,7 +2946,8 @@ function drawGems(){
     else if(g.kind==='bomb')spr=SPR.bomb;
     else if(g.kind==='coin')spr=SPR.coin;
     else spr=g.v>=50?SPR.gem50:g.v>=20?SPR.gem20:g.v>=5?SPR.gem5:SPR.gem1;
-    ctx.drawImage(spr,g.x-spr.width/2,g.y-spr.height/2+bob);
+    if(g.kind==='coin'){ const cw=spr.width*1.5, ch=spr.height*1.5; ctx.drawImage(spr,g.x-cw/2,g.y-ch/2+bob,cw,ch); } // монета ×1.5 визуально (Заход 5)
+    else ctx.drawImage(spr,g.x-spr.width/2,g.y-spr.height/2+bob);
   }
 }
 function drawEnemies(px,py){
@@ -3366,47 +3374,86 @@ function drawMenuAmbient(){
   ctx.fillStyle=sg; ctx.fillRect(0,H*0.16,W,H*0.64);
 }
 
-// ============================== MUSIC (готик-оркестр, прогрессивная загрузка) ==============================
-// Треки лениво подгружаются: первым — меню, остальные в фоне. Если трек не докачался
-// (ошибка/нет сети) — продолжает играть доступный. Кроссфейд по состоянию/интенсивности.
+// ============================== MUSIC (5 собственных треков владельца) ==============================
+// 5 физических треков (track1..track5.mp3, сжаты 96k). Роль состояния → трек.
+// Каждая «дека» = 2 <audio>, пинг-понг для БЕСШОВНОГО кроссфейд-лупа (конец→начало без щелчка).
+// Смена роли (босс/уровень) — тоже кроссфейд между деками. Плюс режим «прослушать» (меню настроек).
 const MUSIC={
-  tracks:{menu:'music/menu.mp3',calm:'music/calm.ogg',intense:'music/intense.mp3',boss:'music/boss.mp3',tension:'music/tension.mp3',final:'music/final.mp3'},
-  el:{}, started:false,
-  get(key){
-    let a=this.el[key];
-    if(a) return a;
-    a=new Audio(); a.src=this.tracks[key]; a.loop=true; a.preload='auto'; a.volume=0;
-    a._failed=false; a.addEventListener('error',()=>{a._failed=true;});
-    this.el[key]=a; return a;
+  files:{t1:'music/track1.mp3',t2:'music/track2.mp3',t3:'music/track3.mp3',t4:'music/track4.mp3',t5:'music/track5.mp3'},
+  // роль (по состоянию игры) → какой трек: 1=меню, 2=уровни(бодрый), 3=уровни(спокойный), 4=босс, 5=опасность/финал
+  roles:{menu:'t1', calm:'t3', intense:'t2', boss:'t4', tension:'t5', final:'t5'},
+  order:['t1','t2','t3','t4','t5'],
+  labels:{t1:'1 · МЕНЮ',t2:'2 · УРОВНИ (бодрый)',t3:'3 · УРОВНИ (спокойный)',t4:'4 · БОСС',t5:'5 · ОПАСНОСТЬ'},
+  XF:1.8,                       // секунды кроссфейда (луп-шов и смена роли)
+  decks:{}, started:false, preview:null, previewId:null, probeStatus:{}, onStatus:null, onPrevEnd:null,
+  deck(id){
+    let d=this.decks[id]; if(d) return d;
+    const src=this.files[id], self=this;
+    const mk=()=>{const a=new Audio();a.src=src;a.preload='auto';a.loop=false;a.volume=0;a._failed=false;a.addEventListener('error',()=>{a._failed=true;});return a;};
+    d={id, els:[mk(),mk()], i:0, g:0};
+    // статус загрузки (по первому элементу) — для меню прослушивания
+    const a0=d.els[0];
+    const upd=()=>{ self.probeStatus[id]=a0._failed?'err':(a0.readyState>=3?'ok':'load'); if(self.onStatus) self.onStatus(id); };
+    a0.addEventListener('canplaythrough',upd); a0.addEventListener('loadeddata',upd); a0.addEventListener('error',upd);
+    self.probeStatus[id]='load';
+    // подстраховка от тишины: если кроссфейд-шов не сработал — мягко перезапустить активный
+    for(const a of d.els) a.addEventListener('ended',()=>{ if(d.g>0.01 && d.els[d.i]===a){ try{a.currentTime=0; a.play().catch(()=>{});}catch(e){} } });
+    this.decks[id]=d; return d;
   },
-  init(){
-    if(this.started) return; this.started=true;
-    this.get('menu');                                 // первый трек сразу
-    setTimeout(()=>{this.get('calm');this.get('intense');this.get('boss');},3000); // остальные в фоне
+  init(){ if(this.started) return; this.started=true;
+    this.deck(this.roles.menu);                                            // меню сразу
+    setTimeout(()=>{ this.deck(this.roles.calm); this.deck(this.roles.intense); this.deck(this.roles.boss); },2500); // остальные в фоне
   },
+  loadAll(){ for(const id of this.order) this.deck(id); },                 // догрузить все (для меню прослушивания)
   vol(){ const s=meta.settings; return clamp(s.master*s.music,0,1); },
-  pauseAll(){ for(const k in this.el) this.el[k].pause(); },
+  pauseAll(){ for(const k in this.decks) for(const a of this.decks[k].els) a.pause(); if(this.preview) this.preview.pause(); },
+  roleNow(){
+    if(run&&(state==='playing'||state==='paused'||state==='levelup')){
+      if(run.bossRef&&!run.bossRef.dead) return run.bossRef.final?'final':(run.bossRef.boss>=3?'tension':'boss');
+      return A.intensity>0.55?'intense':'calm';
+    }
+    return 'menu';
+  },
   tick(dt){
     if(!this.started) return;
     const muted=meta.settings.master<=0.001||document.hidden;
-    let key='menu';
-    if(run&&(state==='playing'||state==='paused'||state==='levelup'))
-      if(run.bossRef&&!run.bossRef.dead) key=run.bossRef.final?'final':(run.bossRef.boss>=3?'tension':'boss');
-      else key=A.intensity>0.55?'intense':'calm';
-    let el=this.get(key);
-    if(el._failed){ // мягкая деградация: ищем любой рабочий трек
-      el=null;
-      for(const k of [key==='boss'?'intense':'calm','calm','menu']){const a=this.get(k);if(!a._failed){el=a;break;}}
+    // режим прослушивания: геймплейная музыка глушится, ведём только превью
+    if(this.preview){
+      this.preview.volume=muted?0:this.vol();
+      if(muted&&!this.preview.paused) this.preview.pause();
+      else if(!muted&&this.preview.paused) this.preview.play().catch(()=>{});
+      for(const k in this.decks){ const dk=this.decks[k]; dk.g=Math.max(0,dk.g-dt*4); this.applyDeck(dk,dk.g,true); }
+      return;
     }
+    const role=this.roleNow();
+    let id=this.roles[role], d=this.deck(id);
+    if(d.els[d.i]._failed){ for(const alt of [this.roles.calm,this.roles.menu]){ const dd=this.deck(alt); if(!dd.els[dd.i]._failed){ d=dd; break; } } }
     const V=muted?0:this.vol();
-    for(const k in this.el){
-      const a=this.el[k];
-      const goal=(a===el)?V:0;
-      a.volume=clamp(a.volume+(goal-a.volume)*Math.min(1,dt*2.2),0,1);
-      if(goal>0&&a.paused) a.play().catch(()=>{});
-      else if((goal<=0||muted)&&!a.paused&&(muted||a.volume<0.02)) a.pause();
+    for(const k in this.decks){
+      const dk=this.decks[k];
+      const goal=(dk===d)?V:0;
+      dk.g=clamp(dk.g+(goal-dk.g)*Math.min(1,dt*2.2),0,1);
+      this.applyDeck(dk,dk.g,muted);
     }
   },
+  // одна дека: внешняя громкость g + внутренний бесшовный кроссфейд-луп (2 элемента)
+  applyDeck(d,g,muted){
+    const cur=d.els[d.i], nxt=d.els[d.i^1];
+    if(g<=0.0015){ cur.volume=0; nxt.volume=0; if(!cur.paused) cur.pause(); if(!nxt.paused) nxt.pause(); return; }
+    if(cur.paused) cur.play().catch(()=>{});
+    const XF=this.XF, dur=cur.duration||0;
+    if(dur>XF+0.6 && cur.currentTime>=dur-XF){           // шов лупа: завести второй элемент с нуля и перетечь
+      if(nxt.paused){ try{nxt.currentTime=0;}catch(e){} nxt.play().catch(()=>{}); }
+      const k=clamp((cur.currentTime-(dur-XF))/XF,0,1);
+      cur.volume=g*(1-k); nxt.volume=g*k;
+      if(k>=0.999){ try{cur.pause(); cur.currentTime=0;}catch(e){} d.i^=1; }
+    } else { cur.volume=g; if(!nxt.paused) nxt.pause(); }
+  },
+  // ===== меню «прослушать» =====
+  play(id){ this.stopPreview(); this.deck(id); const a=new Audio(); a.src=this.files[id]; a.preload='auto'; a.volume=this.vol();
+    a.addEventListener('ended',()=>{ if(this.preview===a){ this.preview=null; this.previewId=null; if(this.onPrevEnd) this.onPrevEnd(); } });
+    a.play().catch(()=>{}); this.preview=a; this.previewId=id; },
+  stopPreview(){ if(this.preview){ this.preview.pause(); this.preview=null; } this.previewId=null; },
 };
 
 // ============================== MAIN LOOP ==============================
@@ -3520,12 +3567,26 @@ function syncSettingsUI(){
   $('tgPerf').classList.toggle('on',s.perf);
   $('tgFps').classList.toggle('on',s.fps);
 }
+function buildMusicTest(){
+  const box=$('musTest'); if(!box) return;
+  box.innerHTML=MUSIC.order.map(id=>{
+    const st=MUSIC.probeStatus[id]||'load';
+    const col=st==='ok'?'#7ce86a':st==='err'?'#e0506a':'#caa94a';
+    const playing=MUSIC.previewId===id;
+    return '<div class="setrow"><label><span style="color:'+col+'">●</span> '+MUSIC.labels[id]+'</label>'
+      +'<button class="toggle'+(playing?' on':'')+'" data-mt="'+id+'">'+(playing?'■':'▶')+'</button></div>';
+  }).join('');
+}
 function openSettings(from){
   settingsFrom=from;
   syncSettingsUI();
+  MUSIC.loadAll();                 // догрузить все треки, чтобы видеть статус
+  MUSIC.onStatus=()=>{ if(state==='settings') buildMusicTest(); };
+  MUSIC.onPrevEnd=()=>{ if(state==='settings') buildMusicTest(); };
+  buildMusicTest();
   setState('settings');
 }
-function closeSettings(){setState(settingsFrom==='paused'?'paused':'menu');}
+function closeSettings(){ MUSIC.stopPreview(); MUSIC.onStatus=null; MUSIC.onPrevEnd=null; setState(settingsFrom==='paused'?'paused':'menu'); }
 function startRun(){
   run=newRun();
   shake=0;
@@ -3710,6 +3771,8 @@ $('btnShopBack').onclick=()=>{A.click();setState('menu');};
 $('btnSaveToggle').onclick=()=>{A.click();$('expWrap').classList.toggle('hidden');
   $('btnSaveToggle').textContent='СОХРАНЕНИЕ / ЗАГРУЗКА '+($('expWrap').classList.contains('hidden')?'⏷':'⏶');};
 $('btnSetBack').onclick=()=>{A.click();closeSettings();};
+$('musTest').addEventListener('click',e=>{ const b=e.target.closest('[data-mt]'); if(!b) return; A.ensure(); A.click();
+  const id=b.dataset.mt; if(MUSIC.previewId===id) MUSIC.stopPreview(); else MUSIC.play(id); buildMusicTest(); });
 $('btnResume').onclick=()=>{A.click();setState('playing');};
 $('btnPauseSettings').onclick=()=>{A.click();openSettings('paused');};
 $('btnQuit').onclick=()=>{A.click();quitToMenu();};
