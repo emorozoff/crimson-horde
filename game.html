@@ -77,9 +77,9 @@ h1,h2,.serif{font-family:var(--pix);}
 .title{font-family:var(--pix);font-size:min(104px,15vw);letter-spacing:4px;margin:0;line-height:1;color:#c01524;
   background-image:var(--titletex),linear-gradient(180deg,#f44a57 0%,#d81f30 44%,#8f1019 100%);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  text-shadow:0 0 12px rgba(150,12,22,0.38),0 3px 0 #2a0810,0 5px 14px #000;animation:titlepulse 3.6s ease-in-out infinite;}
+  text-shadow:0 0 12px rgba(150,12,22,0.38),0 3px 0 #2a0810,0 5px 14px #000;animation:titlepulse 1.8s ease-in-out infinite;}
 @keyframes titlepulse{0%,100%{text-shadow:0 0 10px rgba(150,12,22,0.34),0 3px 0 #2a0810,0 5px 14px #000}
-  50%{text-shadow:0 0 22px rgba(186,24,38,0.5),0 3px 0 #2a0810,0 5px 14px #000}}
+  50%{text-shadow:0 0 16px rgba(168,18,30,0.42),0 3px 0 #2a0810,0 5px 14px #000}}
 .subtitle{font-family:var(--pix);color:var(--dim);letter-spacing:3px;font-size:20px;margin-top:-2px;}
 .btn{pointer-events:auto;cursor:var(--cur,pointer);border:2px solid #46343a;border-radius:5px;color:#d9d2c4;
   background:linear-gradient(180deg,#3b3e48 0%,#2c2e37 50%,#1b1d24 100%);padding:11px 24px;font-size:22px;letter-spacing:1px;
@@ -410,7 +410,7 @@ body.ingame,body.ingame *{cursor:none!important;}
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.55';
+const VERSION='0.56';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
