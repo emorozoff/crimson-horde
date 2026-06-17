@@ -9,12 +9,12 @@
 ## 1. TL;DR
 - **Что это:** браузерный arena-roguelike в духе Vampire Survivors. Тема: человек-**охотник на нечисть**
   (магия + оружие на стороне Света); главный/финальный босс — **вампир**. Язык интерфейса — русский.
-- **Где код:** ОДИН файл `game.html` (~3550 строк, HTML+CSS+JS, без внешних библиотек). Canvas 2D + Web Audio API.
+- **Где код:** ОДИН файл `index.html` (~3550 строк, HTML+CSS+JS, без внешних библиотек). Canvas 2D + Web Audio API.
   Музыка — 5 собственных треков владельца в `music/` (`track1..5.mp3`), фон меню `art/menubg.jpg`, иконки PWA — в `icons/`, плюс `manifest.webmanifest` и `sw.js`.
-- **Текущая версия:** 0.59 (константа `VERSION` в game.html). Каждое изменение = бамп версии (договорённость). АКТУАЛЬНЫЙ статус всех заходов/правок — в `ROADMAP.md` → «🗺️ КАРТА ЗАХОДОВ» (это живой леджер; данный файл — сжатая шпаргалка).
-- **⚠️ ДВА агента правят `game.html` ПАРАЛЛЕЛЬНО:** геймплей-агент (этот — логика: оружие/враги/XP/экономика/боссы/музыка/`ETYPES`/поведения) и UI-агент (визуал: арт врагов `ENEMY_MAPS`, спрайты героев `HEROSPR`, меню/экраны/CSS/кнопки). Зоны НЕ пересекать. Мерж: UI-агент вливает `main` в свою ветку → `main` ff. См. память `longnight-agent-zones`.
+- **Текущая версия:** 0.59 (константа `VERSION` в index.html). Каждое изменение = бамп версии (договорённость). АКТУАЛЬНЫЙ статус всех заходов/правок — в `ROADMAP.md` → «🗺️ КАРТА ЗАХОДОВ» (это живой леджер; данный файл — сжатая шпаргалка).
+- **⚠️ ДВА агента правят `index.html` ПАРАЛЛЕЛЬНО:** геймплей-агент (этот — логика: оружие/враги/XP/экономика/боссы/музыка/`ETYPES`/поведения) и UI-агент (визуал: арт врагов `ENEMY_MAPS`, спрайты героев `HEROSPR`, меню/экраны/CSS/кнопки). Зоны НЕ пересекать. Мерж: UI-агент вливает `main` в свою ветку → `main` ff. См. память `longnight-agent-zones`.
 - **Live (GitHub Pages):** https://emorozoff.github.io/long-night/ — репо `emorozoff/long-night`.
-- **Исходник на машине:** `/Users/egor/Desktop/Claude Code/вампир fable/` (game.html, ROADMAP.md, CLAUDE.md,
+- **Исходник на машине:** `/Users/egor/Desktop/Claude Code/вампир fable/` (index.html, ROADMAP.md, CLAUDE.md,
   manifest.webmanifest, sw.js, music/, icons/, REPORT.md — старый отчёт первых циклов).
 
 ## 2. Договорённости с владельцем (важно соблюдать)
@@ -33,7 +33,7 @@
 **Локальный тест:**
 - **ОСНОВНОЙ способ — Claude Preview MCP** (`mcp__Claude_Preview__preview_*`): `preview_start` (конфиг `.claude/launch.json`,
   имя `longnight`, `python3 -m http.server 8773`) → `preview_eval` (выполнить JS/проверки), `preview_screenshot`,
-  `preview_console_logs` (level=error), `preview_click`. Навигация: `preview_eval` → `window.location.href='http://localhost:8773/game.html'`.
+  `preview_console_logs` (level=error), `preview_click`. Навигация: `preview_eval` → `window.location.href='http://localhost:8773/index.html'`.
   ⚠️ Превью-вкладка в ФОНЕ троттлит rAF → `run.time` стоит; для проверки игровой механики вызывай функции вручную
   (напр. `bossUpdate` в цикле), а не жди тиков loop.
 - Headless Chrome+CDP :9222 — ЗАПАСНОЙ вариант; ТОЛЬКО с `--mute-audio` и УБИВАТЬ после (`pkill -f "remote-debugging-port=9222"`),
@@ -43,21 +43,22 @@
   fireWeapons, bossUpdate, metaCost, …). **Дев-панель:** ОДИН тап по `#verCorner` (`toggleDev`), визуальная обёртка над `__game`
   (старт локации/героя, спавн любого босса, оружие/пассивки максом, warp/таймскейл, бог-мод, XP-лог `window.__xplog`).
 - Синтаксис-чек без браузера: вырезать `<script>` и `node --check`:
-  `sed -n '/<script>/,/<\/script>/p' game.html | sed '1d;$d' > /tmp/c.js && node --check /tmp/c.js`
+  `sed -n '/<script>/,/<\/script>/p' index.html | sed '1d;$d' > /tmp/c.js && node --check /tmp/c.js`
 
-**Деплой (GitHub Pages):**
-- Скрипт-образец (использовался весь проект): клонировать репо в УНИКАЛЬНУЮ /tmp папку (`/tmp/ln_deploy_$$`),
-  скопировать `game.html → index.html`, `ROADMAP.md`, `manifest.webmanifest`, `sw.js`, `icons/*`, `music/*`,
-  закоммитить, `git push origin HEAD:main`. (см. историю — был `/tmp/deploy_ln2.sh`.)
+**Деплой (GitHub Pages) — С 0.59 РЕПО = ИСТОЧНИК ИСТИНЫ, деплой = `git push`:**
+- Локальная папка ПОДКЛЮЧЕНА к репо `emorozoff/long-night` (remote `origin`, ветка `main`). Игровой файл — `index.html`
+  (переименован в 0.59; копировать ничего не надо). GitHub Pages служит `index.html` из `main` → **`git push origin main` = деплой.**
+  Live: https://emorozoff.github.io/long-night/. Старый URL crimson-horde больше НЕ работает.
+- **Два агента / ветки:** геймплей-агент работает на `main`, UI-агент — на своей ветке (вливает `main`→свою→`main` ff).
+  Коммит — по команде владельца («коммить» = сохранить, «выложи» = push в `main` = на сайт).
 - **GitHub-токен** лежит в macOS keychain: `printf "protocol=https\nhost=github.com\n" | git credential-osxkeychain get`
   → поле `password`. **gh CLI не установлен.** Аккаунт `emorozoff`.
-- **ВАЖНО:** не запускать несколько клонов в ОДНУ папку параллельно (была гонка `index-pack`). Уникальная папка спасает.
 - **CDN-лаг:** после пуша index.html обновляется ~1 мин, но новые БИНАРНИКИ (mp3/png) сначала отдают 404,
   затем 200 ещё через 1-2 мин — это нормально, подождать/перепроверить.
 - **sw.js `CACHE`** (сейчас `'longnight-0.59'`) — ОБЯЗАТЕЛЬНО поднимать номер при каждом деплое, иначе у игроков
   залипают старые ассеты (документ грузится network-first, ассеты cache-first). ASSETS сейчас: `art/menubg.jpg`, иконки, `track1..5.mp3`.
 
-## 4. Архитектура game.html
+## 4. Архитектура index.html
 Один `<script>`, секции (искать по `// ===== НАЗВАНИЕ =====`, не по номерам строк — они плывут):
 `UTILS → AUDIO → ЛОКАЦИИ → META → INPUT → TOUCH → SPRITES → RUN STATE → UPGRADES → FX HELPERS →
 COMBAT → GEMS/XP → WEAPONS → ENEMY BEHAVIOUR → BOSS → DIRECTOR → PLAYER/BULLETS/GEMS → UPDATE →
