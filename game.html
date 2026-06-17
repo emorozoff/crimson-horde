@@ -408,7 +408,7 @@ body.ingame,body.ingame *{cursor:none!important;}
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.51';
+const VERSION='0.56';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -898,6 +898,25 @@ function buildSprites(){
     '.l..bbb..l.','l.l.....l.l'],
     {b:'#3a1230',B:'#7c1f4e',e:'#ff2840',l:'#2a0e22',h:'#a93a6e'},7);
   SPR.boss_matron_w=whiteOf(SPR.boss_matron);
+  // Людоед — горбатый людоед-громила с ОГРОМНОЙ клыкастой пастью (пасть = всё тело)
+  SPR.boss_maneater=px([
+    '..HfffffH..','.FfffffffF.','.FefffffeF.','.FfFfffFfF.','FtttttttttF',
+    'mrmrmrmrmrm','mrmrmrmrmrm','FtttttttttF','bFfffffffFb','FFfffffffFF',
+    '..FfffffF..','...FF.FF...'],
+    {f:'#6f6a4e',F:'#46422f',H:'#8c876a',m:'#180808',r:'#7c1420',t:'#e8dcc8',e:'#ff3026',b:'#241a12'},7);
+  SPR.boss_maneater_w=whiteOf(SPR.boss_maneater);
+  SPR.boss_flayer=px(['..hhh.hhh..','.hHHhhhHHh.','.hHrrrrrHh.','.hReReReRh.','.hRrrrrrRh.','bhRrmmmrRhb','bbRrrrrrRbb','.bRRrrrRRb.','.bRrrrrrRb.','..Rrx.xrR..','..r.x.x.r..','...x...x...'],{h:'#2a3a18',H:'#46612a',r:'#5a3a30',R:'#7c5240',e:'#9ef06a',b:'#cfc8b4',m:'#160a08',x:'#7bbf3a'},7);
+  SPR.boss_flayer_w=whiteOf(SPR.boss_flayer);
+  SPR.boss_drowned=px(['...wWWWWw...','..wWccccWw..','..wcCeCeCw..','..wcCCCCCw..','..wcChhhCw..','.wWcCCCCCwW.','wWWcbbbbbcWW','wWcbBBBBBbcW','.WcbBBBBBbcW','..cbBBBBBbc.','..wbB.B.Bbw.','...w.w.w.w..'],{w:'#1e3e46',W:'#274a52',c:'#3a6e74',C:'#5a9098',e:'#a0ffe0',h:'#8fd8c8',b:'#16313a',B:'#274a52'},7);
+  SPR.boss_drowned_w=whiteOf(SPR.boss_drowned);
+  SPR.boss_shepherd=px(['..ww.....s.','.wkw....ss.','..w..rrr.s.','....rRRRr..','...rRkkkRr.','...rRekeRr.','...rRkkkRr.','..rRRRRRRr.','..rRRRRRRr.','..rRRsRRRr.','..rRRsRRRr.','..rr.s.rr..','..r..s..r..'],{r:'#241430',R:'#3a2150',k:'#0e0814',e:'#c060ff',s:'#cfc3a8',w:'#1a1020'},7);
+  SPR.boss_shepherd_w=whiteOf(SPR.boss_shepherd);
+  SPR.boss_gravedigger=px(['....kkk....S.','...CkkkC..SSS','..CkkkkkC.SS.','..CkekekCs...','..CkkkkkcS...','..Cccccccs...','.CccccccccS..','CcccccccccCs.','Ccc.cc.cccCs.','.Cc.ccc.cC...','.dCccccccCd..','.dd.CcC.dd...','....C.C......'],{C:'#241c14',c:'#463a28',k:'#d8d0bc',e:'#7cff8a',s:'#5a3a22',S:'#9aa0a8',d:'#3a2a18'},7);
+  SPR.boss_gravedigger_w=whiteOf(SPR.boss_gravedigger);
+  SPR.boss_maiden=px(['....ppp....','...pPPPp...','..pPWWWPp..','..pPeWePp..','..pPWWWPp..','...wPWPw...','..wWWPWWw..','.wWWWPWWWw.','.wWWWWWWWw.','.wWWvWvWWw.','..wWv.vWw..','..v.....v..'],{P:'#cdd6ea',W:'#f2f4fb',e:'#3a2c52',p:'#8b96b8',w:'#aeb9d6',v:'#7c88ac'},7);
+  SPR.boss_maiden_w=whiteOf(SPR.boss_maiden);
+  SPR.boss_deadking=px(['..y.y.y.y..','..yYyYyYy..','...CCCCC...','..CkkkkkC..','..CkekekC..','..CkkkkkC..','..CkmmmkC..','..CktttkC..','.RCCCCCCCR.','RRCbbbbbCRR','RRCbBBBbCRR','.RCbbbbbCR.','..CC...CC..'],{y:'#e7c24a',Y:'#fff0a0',C:'#2a2230',c:'#3a3040',k:'#e8e0d0',e:'#ff2840',m:'#160a12',t:'#f4ecd8',R:'#5a1626',b:'#6a4a6e',B:'#9a7aa0'},7);
+  SPR.boss_deadking_w=whiteOf(SPR.boss_deadking);
   // --- иконки предметов (тема Света) ---
   const IPAL={W:'#f2ecdf',s:'#9aa6bd',S:'#5a6478',n:'#c6cedd',g:'#e7c24a',G:'#a87f24',l:'#f6e596',r:'#d4203a',R:'#8c1426',b:'#6a4a2c',B:'#3a2a18',k:'#1c1620',y:'#ffd84a',p:'#7a3aa0',P:'#4a2068',c:'#cfe8ff',a:'#3a78c8',e:'#e8c6a0',m:'#5aa84a'};
   const ico=rows=>px(rows,IPAL,4,'#0b0710');
@@ -1316,6 +1335,7 @@ function newRun(){
     time:0, level:1, xp:0, xpNext:xpNeeded(1), lvlQueue:0, choices:[],
     en:[], pb:[], eb:[], gems:[], parts:[], texts:[], decals:[], fx:[],
     pots:[], pools:[], rifts:[], riftT:6,
+    flayPools:[], flaySlowT:0, tides:[], tideZones:[], tideSlow:false, torches:[],
     loc:L.id, hero:H.id,
     p:{x:0,y:0,r:12,hp:maxhp,maxhp:maxhp,face:1,
        spdMul:1+mb.spd+(m.spd||0), regen:mb.reg, magBase:38, magMul:1+mb.mag,
@@ -1594,6 +1614,7 @@ function applySlow(e,f,t){
 // ============================== COMBAT ==============================
 function damageEnemy(e,dmg,src,kx,ky){
   if(e.dead||!run) return;
+  if(e.invuln&&src!=='dev'){ if(meta.settings.dmgnum&&chance(0.2)) addText(e.x,e.y-e.r-6,'×','#9a8aff',16); return; } // Мёртвый король: неуязвим, пока факелы не зажжены (dev-удар проходит)
   let crit=false;
   if(run.p.crit>0&&Math.random()<run.p.crit){dmg*=2;crit=true;}
   dmg=Math.max(1,Math.round(dmg*rand(0.92,1.08)));
@@ -1611,6 +1632,7 @@ let _shatterActive=false; // защита от каскада «Кары све�
 function killEnemy(e){
   if(e.dead) return;
   e.dead=true;
+  if(e.phantom){ phantomPop(e); return; } // двойник Бледной девы: тихо, без kills/дропа/баннера
   const key=e.boss?'boss':(e.elite?'elite':e.type);
   run.stats.kills++;
   run.stats.killsBy[key]=(run.stats.killsBy[key]||0)+1;
@@ -1672,7 +1694,8 @@ function killEnemy(e){
     run.gems.push({x:e.x+32,y:e.y,v:0,kind:'bomb',mag:false,vx:0,vy:0,t:0});
     showBanner('БОСС ПОВЕРЖЕН','+◆'+(40*e.boss));
     A.bossDie(); shakeAdd(18); hitStopAdd(0.09);
-    if(run.bossRef===e) run.bossRef=run.en.find(o=>o.boss&&!o.dead&&o!==e)||null;
+    if(e.bkind==='maiden'&&!e.phantom) for(const o of run.en){ if(o.phantom&&!o.dead){ o.dead=true; addBurst(o.x,o.y,'#b9c8e8',8,120,0.4,2.2); } } // настоящая Дева пала → отражения рассеиваются
+    if(run.bossRef===e) run.bossRef=run.en.find(o=>o.boss&&!o.dead&&!o.phantom&&o!==e)||null;
     if(e.final) winGame();
   }
 }
@@ -2276,6 +2299,590 @@ BOSS_MECH.matron=function(e,dt,dx,dy,d,sf){
     addBurst(e.x,e.y,'#a93a6e',26,200,0.6,3); A.roar(); shakeAdd(8);
   }
 };
+// === Людоед (#2): агрессивно прёт + ПОЖИРАЕТ мобов на пути → лечится и крепнет (HP/урон/размер); ближний бой ===
+// съесть моба: НЕ killEnemy → игроку 0 опыта/дропа/комбо; босс крепнет (кап 50 съеденных)
+function maneaterEat(e,prey){
+  prey.dead=true;
+  if(e.fed<50){ e.fed++; e.hp=Math.min(e.maxhp,e.hp+e.maxhp*0.008); e.r=Math.min(64,42+e.fed*0.44); e.dmg*=1.012; }
+  e.chomp=0.13;                                            // визуальный «глоток» (сквош тела в drawEnemy)
+  addBurst(prey.x,prey.y,'#7a1424',8,120,0.34,2.4);        // тёмно-багровый «глоток» — отличается от обычной смерти
+  A.dieE(false);
+}
+BOSS_MECH.maneater=function(e,dt,dx,dy,d,sf){
+  if(e.fed===undefined){ e.fed=0; e.eatCd=0; e.a1=1.2; }   // e.a2 (из spawnBoss) этот босс не использует
+  const f=e.hp/e.maxhp;
+  e.phase=f>0.5?0:f>0.25?1:2;
+  if(e.chomp>0) e.chomp-=dt;
+  const fr=e.frenzy?1:0;                                    // ярость с фазы 2 = +агрессия
+  // --- движение: телеграф рывка → рывок → агрессивная погоня ---
+  if(e.chT>0){                                             // телеграф (красная линия рисуется в drawEnemies)
+    e.chT-=dt;
+    if(e.chT<=0){ e.dashT=0.7; const ds=620+fr*120; e.dvx=Math.cos(e.chAng)*ds; e.dvy=Math.sin(e.chAng)*ds; A.roar(); shakeAdd(5); }
+  } else if(e.dashT>0){
+    e.dashT-=dt; e.x+=e.dvx*sf*dt; e.y+=e.dvy*sf*dt;
+  } else {
+    const catchUp=clamp(d/420,1,3.2);
+    const spd=([66,80,98][e.phase]+fr*14)*sf*catchUp;
+    e.x+=dx/d*spd*dt; e.y+=dy/d*spd*dt;
+    e.a1-=dt;
+    if(e.a1<=0){
+      if(d>140){
+        let ta=Math.atan2(dy,dx);
+        // голодный рывок: пока недокормлен — иногда прёт В ближайшую стаю, прожёвывая путь (контр-кайт)
+        if(e.fed<24&&chance(0.45)){
+          let pr=null,pb=1e9;
+          forNear(e.x,e.y,460,o=>{ if(o===e||o.dead||o.boss) return; const dv=dist2(e.x,e.y,o.x,o.y); if(dv<pb){pb=dv;pr=o;} });
+          if(pr) ta=Math.atan2(pr.y-e.y,pr.x-e.x);
+        }
+        e.chT=(0.75-e.phase*0.12)-fr*0.12; e.chAng=ta; e.a1=[3.4,2.7,2.0][e.phase]-fr*0.5;
+      } else e.a1=1.2;
+    }
+  }
+  // --- ПОЖИРАНИЕ: ближайший моб в пасти, по одному за такт; насытился (fed=50) → перестаёт, добыча снова игроку ---
+  if(e.fed<50){
+    e.eatCd-=dt;
+    if(e.eatCd<=0){
+      e.eatCd=0.1;                                          // троттл сбрасывается ВСЕГДА, не только при удаче
+      const reach=e.r+14; let prey=null, pbest=1e9;
+      forNear(e.x,e.y,reach+44,o=>{                         // +44: запас под крупных мобов (как push-apart)
+        if(o===e||o.dead||o.boss) return;
+        const dv=dist2(e.x,e.y,o.x,o.y);
+        if(dv<(reach+o.r)*(reach+o.r)&&dv<pbest){ pbest=dv; prey=o; }
+      });
+      if(prey) maneaterEat(e,prey);
+    }
+  }
+  // --- фаза 2: ЯРОСТЬ — реальное усиление (+урон, +агрессия) + жор-припадок ---
+  if(e.phase===2&&!e.enr2){
+    e.enr2=true; e.frenzy=true; e.dmg*=1.2;
+    addBurst(e.x,e.y,'#c0303a',26,220,0.6,3.2); A.roar(); shakeAdd(10);
+    let n=0;                                                // мгновенный жор: заглатывает до 6 ближайших
+    forNear(e.x,e.y,e.r+96,o=>{ if(n>=6||o===e||o.dead||o.boss) return; if(dist2(e.x,e.y,o.x,o.y)<(e.r+52+o.r)*(e.r+52+o.r)){ maneaterEat(e,o); n++; } });
+  }
+};
+// ============================== БОССЫ #3–#8 (механики; визуал-детализация — UI-агент) ==============================
+function spawnFlayPool(x,y,r,life,dps){
+  if(run.flayPools.length>=14) run.flayPools.shift();
+  run.flayPools.push({x,y,r,t:life,max:life,dps,tick:0.2});
+}
+function updateFlayPools(dt){
+  const p=run.p;
+  for(const q of run.flayPools){
+    q.t-=dt; if(q.t<=0){q.dead=true;continue;}
+    q.tick-=dt;
+    if(q.tick<=0){
+      q.tick=0.35;
+      if(dist2(q.x,q.y,p.x,p.y)<(q.r+p.r)*(q.r+p.r)){ damagePlayer(q.dps,'sludge'); run.flaySlowT=Math.max(run.flaySlowT,0.5); }
+    }
+    if(chance(0.18)&&run.parts.length<560)
+      run.parts.push({x:q.x+rand(-q.r,q.r)*0.7,y:q.y+rand(-q.r,q.r)*0.6,vx:0,vy:-rand(6,18),life:rand(0.4,0.9),max:0.9,color:'#7bbf3a',size:rand(1.6,3)});
+  }
+  if(run.flaySlowT>0) run.flaySlowT-=dt;
+  sweep(run.flayPools);
+}
+BOSS_MECH.flayer=function(e,dt,dx,dy,d,sf){
+  // --- ранняя инициализация (один раз) ---
+  if(e.trail===undefined){ e.trail=0; e.dropCd=0; e._enr2=false; }
+  const f=e.hp/e.maxhp;
+  e.phase=f>0.5?0:f>0.25?1:2;                                    // как у matron/maneater
+  // параметры фаз: размер/жизнь/урон лужи и частота капель растут к финалу
+  const poolR   =[58,70,84][e.phase];
+  const poolLife=[5.0,6.0,7.0][e.phase];
+  const poolDps =e.dmg*([0.42,0.5,0.6][e.phase]);                // DoT-урон лужи (масштаб от dmg босса)
+  const dropInt =[0.85,0.6,0.42][e.phase];                       // как часто капает лужа под ногами
+
+  // --- движение: телеграф рывка -> рывок (оставляет ДОРОЖКУ луж) -> агрессивная погоня ---
+  if(e.chT>0){                                                   // телеграф (красная линия — авто-рендер generic-пути)
+    e.chT-=dt;
+    if(e.chT<=0){
+      e.dashT=0.55; const ds=560+e.phase*70;
+      e.dvx=Math.cos(e.chAng)*ds; e.dvy=Math.sin(e.chAng)*ds;
+      A.roar(); shakeAdd(5);
+    }
+  } else if(e.dashT>0){
+    e.dashT-=dt; e.x+=e.dvx*sf*dt; e.y+=e.dvy*sf*dt;
+    // дорожка гнили во время рывка (через интервал по пути)
+    e.trail-=dt;
+    if(e.trail<=0){ e.trail=0.09; spawnFlayPool(e.x,e.y,poolR*0.7,poolLife*0.8,poolDps); }
+  } else {
+    const catchUp=clamp(d/460,1,3.0);
+    const spd=([56,70,86][e.phase])*sf*catchUp;                  // агрессивный, но медленнее людоеда
+    e.x+=dx/d*spd*dt; e.y+=dy/d*spd*dt;
+    // периодический телеграф рывка (только если игрок не вплотную)
+    e.a1=(e.a1||0)-dt;
+    if(e.a1<=0){
+      if(d>150){ e.chT=0.7-e.phase*0.1; e.chAng=Math.atan2(dy,dx); e.a1=[4.0,3.2,2.6][e.phase]; }
+      else e.a1=1.2;
+    }
+  }
+
+  // --- ГЛАВНАЯ МЕХАНИКА: гнилостные лужи под ногами (area-denial) ---
+  e.dropCd-=dt;
+  if(e.dropCd<=0){
+    e.dropCd=dropInt;
+    spawnFlayPool(e.x,e.y,poolR,poolLife,poolDps);
+    addBurst(e.x,e.y+e.r*0.4,'#5a7c2a',6,70,0.4,2.4); A.fizz();
+  }
+
+  // --- удар-выброс лужами по кольцу (раз в N сек), гуще на низком HP ---
+  e.a2=(e.a2||0)-dt;
+  if(e.a2<=0){
+    e.a2=[5.5,4.2,3.2][e.phase];
+    const n=[5,7,9][e.phase], off=rand(0,TAU), rr=e.r+44;
+    for(let i=0;i<n;i++){
+      const a=off+i/n*TAU;
+      spawnFlayPool(e.x+Math.cos(a)*rr,e.y+Math.sin(a)*rr,poolR*0.85,poolLife,poolDps);
+    }
+    addBurst(e.x,e.y,'#6e9a32',18,160,0.5,3); A.nova(); shakeAdd(4);
+  }
+
+  // --- вход в фазу 2 (<=25% HP): разовый «гнилостный потоп» вокруг ---
+  if(e.phase===2&&!e._enr2){
+    e._enr2=true;
+    for(let i=0;i<10;i++){ const a=i/10*TAU, rr=e.r+rand(20,150); spawnFlayPool(e.x+Math.cos(a)*rr,e.y+Math.sin(a)*rr,poolR,poolLife+1.5,poolDps*1.15); }
+    addBurst(e.x,e.y,'#8ac040',28,210,0.6,3.4); A.roar(); shakeAdd(10);
+  }
+};
+function updateTides(dt){
+  if(!run.tides) return;
+  const aliveDrowned=run.bossRef&&!run.bossRef.dead&&run.bossRef.bkind==='drowned';
+  if(!aliveDrowned) run.tides.length=0; // Утопленница мертва → катящиеся волны гасим (лужи дотают сами, slow снимется когда исчезнут)
+  const p=run.p;
+  for(const w of run.tides){
+    w.r+=w.spd*dt;
+    const dp=Math.sqrt(dist2(w.x,w.y,p.x,p.y));
+    if(!w.hitP && dp>=w.r-22 && dp<=w.r+p.r+10){ w.hitP=1; damagePlayer(w.dmg,'tide'); const a=Math.atan2(p.y-w.y,p.x-w.x); p.x+=Math.cos(a)*30; p.y+=Math.sin(a)*30; }
+    if(w.r<560) forNear(w.x,w.y,w.r+30,en=>{ if(en.dead||en.boss||w.hit[en.id]) return; const dd=Math.sqrt(dist2(w.x,w.y,en.x,en.y)); if(dd>=w.r-22&&dd<=w.r+en.r){ w.hit[en.id]=1; damageEnemy(en,w.dmg*0.6,'tide'); applySlow(en,0.6,1.2); } });
+    w.dropAcc-=dt;
+    if(w.dropAcc<=0 && run.tideZones.length<22){ w.dropAcc=0.16; const a=rand(0,TAU); run.tideZones.push({x:w.x+Math.cos(a)*w.r,y:w.y+Math.sin(a)*w.r,r:46,t:w.puddleLife,max:w.puddleLife}); }
+    if(w.r>=w.maxR) w.dead=true;
+  }
+  let inWater=false;
+  for(const z of run.tideZones){
+    z.t-=dt; if(z.t<=0){ z.dead=true; continue; }
+    if(dist2(z.x,z.y,p.x,p.y)<(z.r+p.r)*(z.r+p.r)) inWater=true;
+    if(chance(0.12)&&run.parts.length<560) run.parts.push({x:z.x+rand(-z.r,z.r)*0.6,y:z.y+rand(-z.r,z.r)*0.5,vx:0,vy:-rand(4,12),life:rand(0.4,0.9),max:0.9,color:'#5a9098',size:rand(1.5,3)});
+  }
+  run.tideSlow=inWater;
+  sweep(run.tides); sweep(run.tideZones);
+}
+BOSS_MECH.drowned=function(e,dt,dx,dy,d,sf){
+  if(e.tideT===undefined){ e.tideT=2.2; e.sumT=3.0; run.tides=run.tides||[]; run.tideZones=run.tideZones||[]; }
+  const f=e.hp/e.maxhp;
+  e.phase=f>0.5?0:f>0.25?1:2;
+  // --- движение: «парит», держит дистанцию, медленно дрейфует по орбите (как Матерь роя, но плавнее) ---
+  const want=300, spd=(40+e.boss*1.5);
+  let mvx=0,mvy=0;
+  if(d<want){ mvx=-dx/d*spd; mvy=-dy/d*spd; }
+  else if(d>want+200){ mvx=dx/d*spd*0.5; mvy=dy/d*spd*0.5; }
+  else { const s=(e.id&1)?1:-1; mvx=-dy/d*spd*0.5*s; mvy=dx/d*spd*0.5*s; }
+  // призрачное качание по синусоиде (плавает, а не идёт)
+  const bob=Math.sin(e.t*1.6+e.id)*spd*0.25;
+  mvx+=-dy/d*bob; mvy+=dx/d*bob;
+  e.x+=mvx*sf*dt; e.y+=mvy*sf*dt;
+  // --- ПРИЛИВ: накатывающая волна (телеграф = сама расширяющаяся полоса, рисуется в drawZones) ---
+  e.tideT-=dt;
+  if(e.tideT<=0){
+    e.tideT=[3.4,2.6,2.0][e.phase];
+    const nWaves=[1,1,2][e.phase];
+    for(let k=0;k<nWaves;k++){
+      run.tides.push({
+        x:e.x, y:e.y, r:30, maxR:Math.hypot(W,H)*0.62+120,
+        spd:(360+e.phase*70)+k*40, dmg:e.dmg*0.9, hit:{}, hitP:0,
+        dropAcc:0.16, puddleLife:[3.2,3.8,4.4][e.phase]
+      });
+    }
+    addBurst(e.x,e.y,'#5a9098',16,150,0.5,3); A.nova(); shakeAdd(4);
+  }
+  // --- призыв утопленников: тематические миньоны, 0 опыта (как gnat у Матери роя) ---
+  e.sumT-=dt;
+  if(e.sumT<=0){
+    e.sumT=[7,5.5,4.2][e.phase];
+    let drowned=0; for(const o of run.en) if(o.type==='drowned'&&!o.dead) drowned++;
+    if(drowned<24){
+      const n=[3,4,5][e.phase];
+      for(let i=0;i<n;i++){
+        const a=rand(0,TAU), rr=e.r+rand(10,40);
+        const g=spawnEnemy('drowned',e.x+Math.cos(a)*rr,e.y+Math.sin(a)*rr,{noScale:true});
+        g.xp=0; g.kx=Math.cos(a)*120; g.ky=Math.sin(a)*120;
+      }
+      addBurst(e.x,e.y,'#274a52',10,110,0.4,2.4); A.warp();
+    }
+  }
+  // --- фаза 2 (33% HP): разовый ВАЛ — 3 волны веером, тяжело уворачиваться ---
+  if(e.phase===2 && !e.surge2){
+    e.surge2=true;
+    for(let k=0;k<3;k++){
+      run.tides.push({ x:e.x, y:e.y, r:30+k*40, maxR:Math.hypot(W,H)*0.62+120,
+        spd:340+k*60, dmg:e.dmg*0.85, hit:{}, hitP:0, dropAcc:0.16, puddleLife:4.6 });
+    }
+    addBurst(e.x,e.y,'#a0ffe0',26,200,0.6,3.2); A.roar(); shakeAdd(10);
+  }
+};
+BOSS_MECH.shepherd=function(e,dt,dx,dy,d,sf){
+  // --- ранняя инициализация (один раз, как у matron/maneater) ---
+  if(e.crowCd===undefined){
+    e.crowCd=1.6;        // таймер залпа-линии вороньей стаи
+    e.arcCd=4.2;         // таймер дугового веера
+    e.diveCd=6.5;        // таймер пикирующего рывка
+    e.callSide=1;        // резерв: чередование стороны
+    e.spike2=false;      // разовый всплеск на входе в фазу 2
+    // e.chT/e.chAng/e.dashT/e.dvx/e.dvy/e.phase уже заданы в spawnEnemy/spawnBoss
+  }
+  const f=e.hp/e.maxhp;
+  e.phase=f>0.5?0:f>0.25?1:2;          // 0 спокоен, 1 гуще, 2 ярость
+  const tier=e.boss;                    // =5
+  const ph=e.phase;
+
+  // --- ДВИЖЕНИЕ: держит средину; рывок = ПИКЕ (телеграф через e.chT, авто-рендер красной линии) ---
+  const want=300;                       // комфортная дистанция
+  if(e.chT>0){                          // телеграф пике (drawEnemy рисует красную линию)
+    e.chT-=dt;
+    if(e.chT<=0){
+      e.dashT=0.55-ph*0.06;             // короткое стремительное пике
+      const ds=560+ph*120+tier*8;
+      e.dvx=Math.cos(e.chAng)*ds; e.dvy=Math.sin(e.chAng)*ds;
+      A.roar(); shakeAdd(5);
+      // «свита воронья» сопровождает пике: 2 нетопыря-эскорта по бокам (0 опыта)
+      let _eb=0; for(const o of run.en) if(o.type==='bat'&&!o.dead) _eb++;
+      for(let i=0;i<2&&_eb<60;i++){
+        const a=e.chAng+(i?0.5:-0.5);
+        const cw=spawnEnemy('bat',e.x+Math.cos(a)*30,e.y+Math.sin(a)*30,{noScale:true});
+        cw.xp=0; cw.kx=Math.cos(a)*120; cw.ky=Math.sin(a)*120;
+      }
+    }
+  } else if(e.dashT>0){
+    e.dashT-=dt; e.x+=e.dvx*sf*dt; e.y+=e.dvy*sf*dt;
+  } else {
+    // кайт к средней дистанции + орбитальное скольжение (никогда не липнет к игроку)
+    const spd=(46+ph*7+tier*1.5)*sf;
+    let mvx,mvy;
+    if(d<want-60){ mvx=-dx/d; mvy=-dy/d; }                 // слишком близко → отступает
+    else if(d>want+150){ mvx=dx/d*0.55; mvy=dy/d*0.55; }   // далеко → подбирается
+    else { const s=(e.id&1)?1:-1; mvx=-dy/d*0.7*s; mvy=dx/d*0.7*s; } // средне → кружит
+    e.x+=mvx*spd*dt; e.y+=mvy*spd*dt;
+  }
+
+  // === ЗОВ ВОРОНЬЯ #1: ЛИНИЯ ворон-снарядов — стена поперёк курса, летит на игрока ===
+  e.crowCd-=dt;
+  if(e.crowCd<=0){
+    e.crowCd=[2.0,1.45,1.05][ph];               // фазы → чаще
+    const base=Math.atan2(dy,dx);               // целимся в игрока
+    const perp=base+Math.PI/2;                  // ось линии — поперёк курса
+    const n=[5,7,9][ph];                         // фазы → плотнее
+    const gap=26;                                // шаг между воронами в линии
+    const sp=190+ph*26+tier*6;                   // скорость стаи
+    for(let i=0;i<n;i++){
+      const off=(i-(n-1)/2)*gap;
+      ebAdd({
+        x:e.x+Math.cos(perp)*off, y:e.y+Math.sin(perp)*off,
+        vx:Math.cos(base)*sp, vy:Math.sin(base)*sp,
+        dmg:e.dmg*0.42, r:6, life:4.2, c:'#1a1020'
+      });
+    }
+    A.warp();
+  }
+
+  // === ЗОВ ВОРОНЬЯ #2: ДУГА (арка) — широкий полукруг ворон веером от пастыря ===
+  e.arcCd-=dt;
+  if(e.arcCd<=0){
+    e.arcCd=[5.5,4.2,3.1][ph];
+    const base=Math.atan2(dy,dx);
+    const n=[7,10,13][ph];
+    const spread=1.5+ph*0.25;                    // ширина дуги (рад)
+    const sp=150+ph*22+tier*6;
+    for(let i=0;i<n;i++){
+      const a=base+(i-(n-1)/2)/(n-1)*spread;
+      ebAdd({x:e.x,y:e.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,dmg:e.dmg*0.4,r:5,life:4.6,c:'#241430'});
+    }
+    A.nova();
+  }
+
+  // === ПИКЕ: телеграф рывка к игроку (нечасто, только когда не слишком близко) ===
+  e.diveCd-=dt;
+  if(e.diveCd<=0){
+    e.diveCd=[7.0,5.5,4.2][ph];
+    if(e.dashT<=0 && e.chT<=0 && d>150){
+      e.chT=0.75-ph*0.1;                          // длительность телеграфа (короче в ярости)
+      e.chAng=Math.atan2(dy,dx);
+    } else {
+      e.diveCd=1.2;                               // занят рывком → перепроверить скоро
+    }
+  }
+
+  // === ВХОД В ФАЗУ 2 (33% HP): разовый «вихрь воронья» — кольцо-нова + эскорт-стая ===
+  if(ph===2 && !e.spike2){
+    e.spike2=true;
+    const off=rand(0,TAU), n2=20+tier*2;
+    for(let i=0;i<n2;i++){
+      const a=off+i/n2*TAU;
+      ebAdd({x:e.x,y:e.y,vx:Math.cos(a)*170,vy:Math.sin(a)*170,dmg:e.dmg*0.45,r:5,life:4.5,c:'#2a1840'});
+    }
+    let bats=0; for(const o of run.en) if(o.type==='bat'&&!o.dead) bats++;
+    if(bats<60){
+      for(let i=0;i<8;i++){
+        const a=i/8*TAU;
+        const cw=spawnEnemy('bat',e.x+Math.cos(a)*34,e.y+Math.sin(a)*34,{noScale:true});
+        cw.xp=0; cw.kx=Math.cos(a)*200; cw.ky=Math.sin(a)*200;
+      }
+    }
+    addBurst(e.x,e.y,'#3a1850',26,210,0.6,3.2); A.roar(); shakeAdd(10);
+  }
+};
+BOSS_MECH.gravedigger=function(e,dt,dx,dy,d,sf){
+  // --- one-time init (guard ALL new state on the boss object) ---
+  if(e.dig===undefined){
+    e.dig=0;          // grave-trap cadence timer
+    e.rise=2.2;       // first "raising of the dead" comes quickly after the banner
+    e.graves=[];      // local telegraphed graves: {x,y,t,T,r,boom,fx,dead}
+    e.boom=false;     // phase-2 one-shot mass-grave guard
+  }
+  const f=e.hp/e.maxhp;
+  e.phase=f>0.5?0:f>0.25?1:2;
+  const tier=e.boss, m=run.time/60;
+  // --- MOVEMENT: slow tanky digger. Steady plod + rare telegraphed lunge ---
+  // (reuses generic dash fields; the red telegraph auto-renders for e.boss&&e.chT>0)
+  if(e.chT>0){
+    e.chT-=dt;
+    if(e.chT<=0){ e.dashT=0.55; const ds=300+tier*8; e.dvx=Math.cos(e.chAng)*ds; e.dvy=Math.sin(e.chAng)*ds; A.roar(); shakeAdd(4); }
+  } else if(e.dashT>0){
+    e.dashT-=dt; e.x+=e.dvx*sf*dt; e.y+=e.dvy*sf*dt;
+  } else {
+    const catchUp=clamp(d/620,1,1.7);
+    const spd=([30,36,44][e.phase]+tier*1.5)*sf*catchUp;
+    e.x+=dx/d*spd*dt; e.y+=dy/d*spd*dt;
+    if(e.lunge===undefined) e.lunge=4.5;
+    e.lunge-=dt;
+    if(e.lunge<=0){
+      if(d>150&&d<560){ e.chT=0.9-e.phase*0.12; e.chAng=Math.atan2(dy,dx); }
+      e.lunge=[6.5,5.5,4.5][e.phase];
+    }
+  }
+  // --- ПОДНЯТИЕ МЁРТВЫХ: area-summon of weak 0-XP mobs around the PLAYER (matron-style) ---
+  e.rise-=dt;
+  if(e.rise<=0){
+    e.rise=[5.2,4.0,3.0][e.phase];
+    let risen=0; for(const o of run.en) if(o._risen&&!o.dead) risen++;
+    if(risen<150){
+      const n=[5,7,9][e.phase];
+      const types=['skeleton','ghoul','zombie'];
+      for(let i=0;i<n;i++){
+        const a=rand(0,TAU), rr=run.p.r+rand(70,170);
+        const sx=run.p.x+Math.cos(a)*rr, sy=run.p.y+Math.sin(a)*rr;
+        const gg=spawnEnemy(pick(types),sx,sy,{noScale:true});
+        gg.xp=0; gg._risen=true;
+        gg.kx=Math.cos(a)*60; gg.ky=Math.sin(a)*60;
+        addBurst(sx,sy,'#3a2a18',5,90,0.4,2.2);
+      }
+      A.warp();
+    }
+  }
+  // --- РАЗРЫТЫЕ МОГИЛЫ: telegraphed ground traps under/near the player, erupt after delay ---
+  e.dig-=dt;
+  if(e.dig<=0){
+    e.dig=[3.4,2.6,2.0][e.phase];
+    const n=[1,2,3][e.phase];
+    for(let i=0;i<n;i++){
+      // i===0: dug directly UNDER the player; extras scatter nearby (all dodgeable in 1.15s)
+      const a=rand(0,TAU), off=i===0?0:rand(40,130);
+      e.graves.push({x:run.p.x+Math.cos(a)*off,y:run.p.y+Math.sin(a)*off,t:1.15,T:1.15,r:72,boom:false});
+    }
+    A.fizz();
+  }
+  for(const g of e.graves){
+    g.t-=dt;
+    if(g.t<=0&&!g.boom){
+      g.boom=true; g.fx=0.32;
+      const pdmg=(11+tier*1.6)*(1+m*0.18);
+      if(dist2(g.x,g.y,run.p.x,run.p.y)<(g.r+run.p.r)*(g.r+run.p.r)) damagePlayer(pdmg,'grave');
+      const edmg=(34+tier*6)*(1+0.3*m);
+      forNear(g.x,g.y,g.r+46,o=>{
+        if(!o.dead&&!o.boss&&dist2(g.x,g.y,o.x,o.y)<(g.r+o.r)*(g.r+o.r)) damageEnemy(o,edmg,'grave');
+      });
+      addBurst(g.x,g.y,'#4a3420',22,210,0.5,3); addBurst(g.x,g.y,'#7c5a30',10,150,0.45,2.4);
+      shakeAdd(3); A.nova();
+    }
+    if(g.boom){ g.fx-=dt; if(g.fx<=0) g.dead=true; }
+  }
+  if(e.graves.length){ let w=0; for(let i=0;i<e.graves.length;i++){ if(!e.graves[i].dead) e.graves[w++]=e.graves[i]; } e.graves.length=w; }
+  // --- PHASE 2 (33% HP): one-shot ring of mass-grave eruptions around the player ---
+  if(e.phase===2&&!e.boom){
+    e.boom=true;
+    const ring=8;
+    for(let i=0;i<ring;i++){
+      const a=i/ring*TAU, rr=120+rand(-20,20);
+      e.graves.push({x:run.p.x+Math.cos(a)*rr,y:run.p.y+Math.sin(a)*rr,t:1.0,T:1.0,r:70,boom:false});
+    }
+    addBurst(e.x,e.y,'#6e4a28',26,220,0.6,3.2); A.roar(); shakeAdd(9);
+    addText(e.x,e.y-e.r-10,'ВОССТАНЬТЕ','#9ef06a',16);
+  }
+};
+function phantomPop(e){
+  e.dead=true;
+  addBurst(e.x,e.y,'#b9c8e8',16,180,0.5,2.6);
+  addText(e.x,e.y-e.r,'отражение','#b9c8e8',13);
+  A.warp();
+  if(run.bossRef===e) run.bossRef=run.en.find(o=>o.boss&&!o.dead&&!o.phantom)||null;
+}
+function maidenSpawnPhantoms(e,n){
+  const p=run.p;
+  let live=0; for(const o of run.en) if(o.phantom&&!o.dead) live++;
+  for(let i=0;i<n&&live<6;i++,live++){
+    const a=rand(0,TAU), rr=130+rand(0,120);
+    const ph=spawnEnemy('boss',p.x+Math.cos(a)*rr,p.y+Math.sin(a)*rr,{noScale:true});
+    ph.boss=e.boss; ph.bkind='maiden'; ph.name=e.name; ph.phantom=true;
+    ph.r=e.r; ph.spd=42;
+    ph.maxhp=ph.hp=Math.max(40,Math.round(e.maxhp*0.05));
+    ph.dmg=e.dmg*0.16; ph.xp=0;
+    ph.wob=rand(0,TAU); ph.life=rand(7,11);
+    addBurst(ph.x,ph.y,'#aeb9d6',10,150,0.4,2.4);
+  }
+  A.warp();
+}
+BOSS_MECH.maiden=function(e,dt,dx,dy,d,sf){
+  const p=run.p;
+  // ---------- ФАНТОМ: зеркалит ввод игрока, мало урона, исчезает по таймеру ----------
+  if(e.phantom){
+    e.life-=dt;
+    if(e.life<=0){ phantomPop(e); return; }
+    e.wob+=dt*2.2;
+    const spd=160*sf;
+    let vx,vy;
+    if(p.moving){ vx=-p.mx*spd; vy=-p.my*spd; }            // ОТРАЖЕНИЕ: игрок влево — фантом вправо (это и есть «тель»)
+    else { vx=Math.cos(e.wob)*spd*0.45; vy=Math.sin(e.wob)*spd*0.45; } // стоит — тихий дрейф по кругу
+    e.x+=vx*dt; e.y+=vy*dt;
+    // мягко держим у игрока, чтобы не улетел за экран
+    const pdx=p.x-e.x, pdy=p.y-e.y, pd=Math.hypot(pdx,pdy)||1;
+    if(pd>360){ e.x+=pdx/pd*(pd-360)*0.5; e.y+=pdy/pd*(pd-360)*0.5; }
+    return;
+  }
+  // ---------- НАСТОЯЩАЯ ДЕВА: честно ОХОТИТСЯ ----------
+  if(e._mi===undefined){ e._mi=1; e.a1=3.0; e.mirT=2.0; }  // первый призыв зеркал быстро после появления
+  const f=e.hp/e.maxhp;
+  e.phase=f>0.5?0:f>0.25?1:2;
+  // движение: телеграф рывка → рывок → честная погоня (красная линия рисуется в drawEnemy при e.boss&&e.chT>0)
+  if(e.chT>0){
+    e.chT-=dt;
+    if(e.chT<=0){ e.dashT=0.6; const ds=560; e.dvx=Math.cos(e.chAng)*ds; e.dvy=Math.sin(e.chAng)*ds; A.roar(); shakeAdd(5); }
+  } else if(e.dashT>0){
+    e.dashT-=dt; e.x+=e.dvx*sf*dt; e.y+=e.dvy*sf*dt;
+  } else {
+    const catchUp=clamp(d/460,1,3.0);
+    const spd=([60,74,92][e.phase])*sf*catchUp;
+    e.x+=dx/d*spd*dt; e.y+=dy/d*spd*dt;
+    e.a1-=dt;
+    if(e.a1<=0){
+      if(d>150){ e.chT=0.7-e.phase*0.1; e.chAng=Math.atan2(dy,dx); e.a1=[4.2,3.4,2.6][e.phase]; }
+      else e.a1=1.4;
+    }
+  }
+  // ЗЕРКАЛА: периодически призывает двойников; гуще и чаще на низком HP. Сама дева телепортируется, путая след.
+  e.mirT-=dt;
+  if(e.mirT<=0){
+    e.mirT=[7.5,6.0,4.5][e.phase];
+    maidenSpawnPhantoms(e,[2,3,3][e.phase]);
+    const a=rand(0,TAU), rr=120+rand(0,90);
+    addBurst(e.x,e.y,'#cdd6ea',18,180,0.5,2.6);
+    e.x=p.x+Math.cos(a)*rr; e.y=p.y+Math.sin(a)*rr;       // прыжок в строй двойников — не отличить, кто настоящая
+    addBurst(e.x,e.y,'#f2f4fb',18,180,0.5,2.6);
+    A.warp();
+  }
+  // вход в фазу 2 (33% HP): разовый залп зеркал + кольцевая нова осколков
+  if(e.phase===2&&!e.burst2){
+    e.burst2=true;
+    maidenSpawnPhantoms(e,2);
+    const off=rand(0,TAU), nb=18;
+    for(let i=0;i<nb;i++){ const ang=off+i/nb*TAU; ebAdd({x:e.x,y:e.y,vx:Math.cos(ang)*170,vy:Math.sin(ang)*170,dmg:e.dmg*0.45,r:5,life:4,c:'#cdd6ea'}); }
+    addBurst(e.x,e.y,'#f2f4fb',26,210,0.6,3); A.nova(); shakeAdd(9);
+  }
+};
+function deadkingTorches(e,dt){
+  if(!run.torches) run.torches=[];
+  const p=run.p;
+  if(!e._tInit){
+    e._tInit=1; run.torches.length=0;
+    const cx=run.p.x, cy=run.p.y, R=200;
+    for(let i=0;i<6;i++){ const a=i/6*TAU - Math.PI/2; run.torches.push({x:cx+Math.cos(a)*R, y:cy+Math.sin(a)*R, lit:false, t:0}); }
+    e._throne={x:cx,y:cy};
+    showBanner(e.name,'Зажги все факелы — король станет смертным',2600);
+  }
+  let litAll=true, justLit=false;
+  for(const tc of run.torches){
+    if(tc.lit){ tc.t-=dt; if(tc.t<=0){ tc.lit=false; tc.t=0; } }
+    else if(dist2(p.x,p.y,tc.x,tc.y) < 52*52){ tc.lit=true; tc.t=12.0; justLit=true; addBurst(tc.x,tc.y,'#ffd86a',14,160,0.5,2.8); }
+    if(!tc.lit) litAll=false;
+  }
+  if(justLit) A.fizz();
+  return litAll && run.torches.length>0;
+}
+function drawTorches(){
+  if(!run.torches || !run.bossRef || run.bossRef.dead){ if(run.torches&&run.torches.length&&(!run.bossRef||run.bossRef.dead)) run.torches.length=0; return; }
+  const blink=0.5+Math.sin(performance.now()*0.012)*0.3;
+  for(const tc of run.torches){
+    ctx.fillStyle='#241018'; ctx.fillRect(tc.x-3,tc.y-2,6,20);
+    if(tc.lit){
+      const fade=clamp(tc.t/1.2,0,1);
+      ctx.globalAlpha=0.85*fade+0.15; ctx.fillStyle='#ffd86a';
+      ctx.beginPath();ctx.arc(tc.x,tc.y-6,7+blink*2,0,TAU);ctx.fill();
+      ctx.fillStyle='rgba(255,120,40,0.5)';
+      ctx.beginPath();ctx.arc(tc.x,tc.y-6,13,0,TAU);ctx.fill();
+      ctx.globalAlpha=1;
+    } else {
+      ctx.strokeStyle='rgba(180,150,90,0.45)'; ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(tc.x,tc.y-6,7,0,TAU);ctx.stroke();
+    }
+  }
+}
+BOSS_MECH.deadking=function(e,dt,dx,dy,d,sf){
+  if(e._kInit===undefined){ e._kInit=1; e.invuln=true; e.a1=1.6; e.mortalT=0; e.salvoN=0; }
+  const f=e.hp/e.maxhp;
+  e.phase=f>0.5?0:f>0.25?1:2;
+  // --- ТОРЧ-СИСТЕМА + ворота смертности (хелпер в newCodeOutsideMech) ---
+  const allLit=deadkingTorches(e,dt);
+  if(allLit && e.mortalT<=0 && e.invuln){
+    e.invuln=false; e.mortalT=6.0;                 // окно уязвимости
+    for(const tc of run.torches){ tc.lit=false; tc.t=0; }  // все факелы гаснут
+    addBurst(e.x,e.y,'#fff0c0',40,260,0.7,3.4); A.nova(); shakeAdd(12);
+    showBanner('КОРОЛЬ УЯЗВИМ','руби сейчас!',1500);
+  }
+  if(e.mortalT>0){
+    e.mortalT-=dt;
+    if(e.mortalT<=0){ e.invuln=true; e.mortalT=0; for(const tc of run.torches){ tc.lit=false; tc.t=0; } addBurst(e.x,e.y,'#6a2030',24,180,0.5,3); A.warp(); }
+  }
+  // --- движение дуэлянта: телеграф рывка → рывок → агрессивная погоня ---
+  const aggr=[1,1.18,1.4][e.phase];
+  if(e.chT>0){                                      // красная линия рисуется авто-рендером (e.boss&&e.chT>0)
+    e.chT-=dt;
+    if(e.chT<=0){ e.dashT=0.55; const ds=640*aggr; e.dvx=Math.cos(e.chAng)*ds; e.dvy=Math.sin(e.chAng)*ds; A.roar(); shakeAdd(5); }
+  } else if(e.dashT>0){
+    e.dashT-=dt; e.x+=e.dvx*sf*dt; e.y+=e.dvy*sf*dt;
+  } else {
+    const catchUp=clamp(d/440,1,3.0);
+    const spd=([70,86,104][e.phase])*sf*catchUp;
+    e.x+=dx/d*spd*dt; e.y+=dy/d*spd*dt;
+  }
+  // --- дальний бой: прицельный веер ИЛИ телеграф рывка; с фазы 1 каждый 3-й залп = кольцевая нова ---
+  e.a1-=dt;
+  if(e.a1<=0){
+    e.a1=[2.2,1.7,1.3][e.phase];
+    if(d>150 && chance(0.42)){
+      e.chT=0.7-e.phase*0.1; e.chAng=Math.atan2(dy,dx);
+    } else {
+      const n=4+e.phase*2, base=Math.atan2(dy,dx), sp=210+e.phase*30;
+      for(let i=0;i<n;i++){
+        const a=base+(i-(n-1)/2)*0.17;
+        ebAdd({x:e.x,y:e.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,dmg:e.dmg*0.5,r:6,life:4,c:'#c0a0ff'});
+      }
+      e.salvoN++;
+      if(e.phase>=1 && e.salvoN%3===0){
+        const off=rand(0,TAU), n2=18+e.boss;
+        for(let i=0;i<n2;i++){ const a=off+i/n2*TAU; ebAdd({x:e.x,y:e.y,vx:Math.cos(a)*160,vy:Math.sin(a)*160,dmg:e.dmg*0.4,r:5,life:4.2,c:'#9060d0'}); }
+        A.nova();
+      }
+    }
+  }
+};
+
 function bossUpdate(e,dt,dx,dy,d,sf){
   const mech=BOSS_MECH[e.bkind]; if(mech){ mech(e,dt,dx,dy,d,sf); return; }
   const f=e.hp/e.maxhp, tier=e.boss;
@@ -2505,7 +3112,7 @@ function updatePlayer(dt){
     if(d>0.18){dx=touchPad.vx/d;dy=touchPad.vy/d;}
   }
   if(dx) p.face=dx>0?1:-1;
-  const spd=230*p.spdMul*((run.loc==='swamp'||run.loc==='grave')&&inPool(p.x,p.y)?0.84:1);
+  const spd=230*p.spdMul*((run.loc==='swamp'||run.loc==='grave')&&inPool(p.x,p.y)?0.84:1)*Math.max(0.55,(run.flaySlowT>0?0.6:1)*(run.tideSlow?0.55:1));
   p.x+=dx*spd*dt; p.y+=dy*spd*dt;
   // коллизия с препятствиями — тормозят ТОЛЬКО игрока (враги/снаряды проходят сквозь)
   forObstaclesNear(p.x,p.y,p.r+OBST_R+6,o=>{
@@ -2762,6 +3369,7 @@ function update(dt){
   if(state!=='playing') return;
   updateGems(dt);
   updateZones(dt);
+  updateFlayPools(dt); updateTides(dt);
   if(state!=='playing') return;
   updateFxArr(dt);
   director(dt);
@@ -2839,6 +3447,46 @@ function drawGround(px,py){
   });
 }
 function drawZones(){
+  // --- зоны боссов #3-8 (под ордой) ---
+  for(const q of run.flayPools){
+    const al=clamp(q.t/Math.min(q.max,0.8),0,1)*0.9;
+    ctx.globalAlpha=al; ctx.fillStyle='rgba(90,150,40,0.30)';
+    ctx.beginPath();ctx.ellipse(q.x,q.y,q.r,q.r*0.78,0,0,TAU);ctx.fill();
+    ctx.strokeStyle='rgba(140,200,60,0.5)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.ellipse(q.x,q.y,q.r,q.r*0.78,0,0,TAU);ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  for(const z of run.tideZones){
+    const al=clamp(z.t/z.max,0,1);
+    ctx.globalAlpha=0.5*al; ctx.fillStyle='rgba(60,110,116,0.5)';
+    ctx.beginPath();ctx.ellipse(z.x,z.y,z.r,z.r*0.7,0,0,TAU);ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  for(const w of run.tides){
+    const al=clamp(1-w.r/w.maxR,0,1);
+    ctx.strokeStyle='rgba(160,255,224,'+(0.45*al+0.2)+')'; ctx.lineWidth=6;
+    ctx.beginPath();ctx.arc(w.x,w.y,w.r,0,TAU);ctx.stroke();
+    ctx.strokeStyle='rgba(90,144,152,'+(0.35*al)+')'; ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(w.x,w.y,w.r-7,0,TAU);ctx.stroke();
+  }
+  { const ge=run.bossRef;
+    if(ge&&!ge.dead&&ge.graves) for(const g of ge.graves){
+      if(!g.boom){
+        const k=1-g.t/g.T;
+        ctx.strokeStyle='rgba(120,90,40,'+(0.3+k*0.5)+')'; ctx.lineWidth=2+k*3;
+        ctx.beginPath();ctx.arc(g.x,g.y,g.r*(0.45+k*0.55),0,TAU);ctx.stroke();
+        ctx.fillStyle='rgba(20,12,6,'+(0.12+k*0.28)+')';
+        ctx.beginPath();ctx.arc(g.x,g.y,g.r,0,TAU);ctx.fill();
+      } else if(g.fx>0){
+        const a=clamp(g.fx/0.32,0,1);
+        ctx.fillStyle='rgba(150,110,60,'+(0.4*a)+')';
+        ctx.beginPath();ctx.arc(g.x,g.y,g.r,0,TAU);ctx.fill();
+        ctx.strokeStyle='rgba(190,150,90,'+(0.6*a)+')';ctx.lineWidth=3;
+        ctx.beginPath();ctx.arc(g.x,g.y,g.r*(1.05-a*0.2),0,TAU);ctx.stroke();
+      }
+    }
+  }
+  drawTorches();
   const p=run.p;
   // луч фонаря
   if(run.fused.spear && run.lanternBeam){
@@ -3039,6 +3687,7 @@ function drawEnemy(e){
     const base=ETYPES[e.type].r;
     const sc=e.r/base*(e.boss?1.25:1);
     const squash=1+Math.sin(e.t*9)*0.018;
+    const chomp=(e.boss&&e.chomp>0)?Math.sin((1-e.chomp/0.13)*Math.PI)*0.18:0; // «глоток» Людоеда: сплющивание тела при поедании
     const face=p.x>e.x?1:-1;
     // тень
     ctx.fillStyle='rgba(0,0,0,0.3)';
@@ -3053,7 +3702,7 @@ function drawEnemy(e){
     } else {
       ctx.save();
       ctx.translate(e.x,e.y);
-      ctx.scale(face*sc/squash,sc*squash);
+      ctx.scale(face*sc/squash*(1+chomp),sc*squash*(1-chomp));
       ctx.drawImage(spr,-spr.width/2,-spr.height/2);
       if(flashing&&e.boss&&bossW){ ctx.globalAlpha=clamp(e.flash*5,0,0.55); ctx.drawImage(bossW,-spr.width/2,-spr.height/2); ctx.globalAlpha=1; }
       ctx.restore();
@@ -3063,7 +3712,7 @@ function drawEnemy(e){
       ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,TAU);ctx.fill();
     }
     // полоса HP элиты и громилы
-    if((e.elite||e.boss||e.type==='brute')&&e.hp<e.maxhp){
+    if((e.elite||(e.boss&&!e.phantom)||e.type==='brute')&&e.hp<e.maxhp){
       const w2=e.r*1.6;
       ctx.fillStyle='rgba(0,0,0,0.55)';
       ctx.fillRect(e.x-w2/2,e.y-e.r-10,w2,4);
