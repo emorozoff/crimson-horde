@@ -403,7 +403,7 @@ h1,h2,.serif{font-family:var(--pix);}
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.46';
+const VERSION='0.47';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -842,6 +842,20 @@ function buildSprites(){
       '.pPewePp.','.pPPPPPp.','..pPPPp..','..pPPPp..','...ppp...','...p.p...']},
     gnat:{s:3,pal:{b:'#3a1230',w:'#7c5a8a',e:'#ff4060'},rows:[
       'w...w','.bbb.','.beb.','.www.']},
+    ghoul:{s:3,pal:{a:'#2c3a22',b:'#54663a',c:'#7c9050',e:'#ff3838',m:'#181006'},rows:['...bbb...','..bbbbb..','.bbcccbb.','.bcececb.','.bbcccbb.','.bbmmmbb.','a.bbbbb.a','abbbbbbba','.bbb.bbb.','.bb...bb.','.b.....b.']},
+    skeleton:{s:3,pal:{b:'#d8d2c2',k:'#2a241c',e:'#ff5050'},rows:['..bbbbb..','.bbbbbbb.','.bekkkeb.','.bbkkkbb.','.bbbbbbb.','..bbbbb..','...bbb...','.bb.b.bb.','.b.b.b.b.','.b.....b.']},
+    drowned:{s:3,pal:{b:'#274a52',c:'#3a6e74',h:'#5a9098',e:'#a0ffe0',m:'#0c1c20'},rows:['..ccc..','.cbbbc.','cbhbhbc','cbebebc','cbbbbbc','cbmmmbc','cbbbbbc','.cbbbc.','.c...c.']},
+    larva:{s:3,pal:{h:'#d8c0a0',b:'#b89878',e:'#ff6060'},rows:['.hhh.','hbebh','hbbbh','hbbbh','.hhh.']},
+    knight:{s:3,pal:{s:'#7a828e',S:'#4a525e',d:'#2a2e36',e:'#ff4040',g:'#c0c8d2'},rows:['..ggg..','.gSSSg.','.SeSeS.','.SSSSS.','dSSSSSd','dSsssSd','.SsssS.','.SS.SS.','.dd.dd.']},
+    hound:{s:3,pal:{d:'#3a1410',b:'#5e221a',c:'#7e342a',e:'#ff5020',m:'#140605'},rows:['..........','b..bb..b..','bb.bbbb.cc','.bbcccbeb.','.bbcccccb.','dbbbbbbbbd','.b.b..b.b.','.d.d..d.d.']},
+    bomber:{s:3,pal:{r:'#7e2418',R:'#a83422',y:'#ffd040',e:'#ff8020',m:'#1a0805'},rows:['...yyy...','..rRRRr..','.rRRRRRr.','rRReyeRRr','rRRyyyRRr','rRReyeRRr','.rRRRRRr.','..rRRRr..','...r.r...']},
+    archer:{s:3,pal:{b:'#c8c2b0',k:'#241e16',e:'#ff5050',w:'#7a5a30'},rows:['..bbb.w','.bkbkbw','.bbbbww','.bbb.w.','wbbbbw.','wbbbbw.','.b.b.w.','.b.b.w.','.b...b.']},
+    cultist:{s:3,pal:{p:'#3a1c4a',P:'#5e2e74',k:'#16081e',e:'#d040ff',h:'#7a4a9e'},rows:['...ppp...','..pPPPp..','.pPkkkPp.','.pkekekp.','.pPkkkPp.','.pPPPPPp.','pPPPPPPPp','.pPPPPPp.','.pP...Pp.','.pp...pp.']},
+    spider:{s:3,pal:{d:'#241018',b:'#4a1e2e',c:'#6e2e44',e:'#ff3060'},rows:['d.d...d.d','.dd.b.dd.','..bccccb.','.bcececb.','.bcccccb.','..bcccb..','.dd.b.dd.','d.d...d.d']},
+    ogre:{s:4,pal:{b:'#5a6e3a',c:'#7e944e',H:'#d8cfc4',e:'#ff2840',m:'#1c2410'},rows:['.H........H.','.HH......HH.','..bbbbbbbb..','.bbccccccbb.','.bcceeeeccb.','.bcceeeeccb.','.bccccccccb.','.bcmmmmmmcb.','.bbccccccbb.','..bbbbbbbb..','..bb....bb..']},
+    wraith:{s:3,pal:{w:'#3a4a6e',W:'#5a6e9a',c:'#8aa0d0',e:'#80ffff'},rows:['...WWW...','..WcccW..','.WcececW.','.WcccccW.','.WcccccW.','.wWcccWw.','..wWcWw..','...wcw...','..w.w.w..']},
+    harpy:{s:3,pal:{w:'#5a3a2e',W:'#7e5440',b:'#2e1c16',c:'#a87858',e:'#ffd040'},rows:['W.........W','.WW.bbb.WW.','..WbececbW.','...bcccb...','...wbbbw...','....b.b....']},
+    beetle:{s:3,pal:{d:'#1a1408',b:'#3a2e14',c:'#5e4a1e',H:'#8a7030',e:'#ff5030'},rows:['..dddd..','.dHHHHd.','dccccccd','dceccecd','dccccccd','dcddddcd','.d.dd.d.','d.d..d.d']},
   };
   for(const id in ENEMY_MAPS){
     const d=ENEMY_MAPS[id];
@@ -1137,9 +1151,23 @@ const ETYPES={
   brute:  {r:24, hp:150, spd:30,  dmg:22, xp:8,   behav:'tank'},
   warper: {r:12, hp:34,  spd:62,  dmg:12, xp:4,   behav:'warp'},
   gnat:   {r:6,  hp:4,   spd:150, dmg:4,  xp:1,   behav:'swarm'},
+  ghoul: {r:14,hp:24,spd:64,dmg:9,xp:1,behav:'chase'},
+  skeleton: {r:12,hp:16,spd:70,dmg:8,xp:1,behav:'chase'},
+  drowned: {r:15,hp:36,spd:44,dmg:11,xp:2,behav:'chase'},
+  larva: {r:8,hp:8,spd:52,dmg:4,xp:1,behav:'hop'},
+  knight: {r:16,hp:130,spd:34,dmg:16,xp:6,behav:'tank'},
+  hound: {r:12,hp:30,spd:140,dmg:13,xp:4,behav:'fast'},
+  bomber: {r:15,hp:24,spd:58,dmg:6,xp:3,behav:'exploder'},
+  archer: {r:12,hp:24,spd:64,dmg:9,xp:3,behav:'ranged'},
+  cultist: {r:13,hp:30,spd:60,dmg:10,xp:4,behav:'ranged'},
+  spider: {r:13,hp:28,spd:82,dmg:8,xp:2,behav:'hop'},
+  ogre: {r:26,hp:280,spd:26,dmg:26,xp:12,behav:'tank'},
+  wraith: {r:13,hp:30,spd:70,dmg:12,xp:4,behav:'warp'},
+  harpy: {r:11,hp:18,spd:122,dmg:9,xp:2,behav:'swarm'},
+  beetle: {r:14,hp:42,spd:48,dmg:10,xp:2,behav:'chase'},
   boss:   {r:42, hp:1500,spd:42,  dmg:20, xp:120, behav:'boss'},
 };
-const ENAMES={zombie:'Упыри',bat:'Нетопыри',slime:'Слизни',spitter:'Плевуны',brute:'Громилы',warper:'Бесы',gnat:'Мошкара',elite:'Элита',boss:'Боссы'};
+const ENAMES={zombie:'Упыри',bat:'Нетопыри',slime:'Слизни',spitter:'Плевуны',brute:'Громилы',warper:'Бесы',gnat:'Мошкара',ghoul:'Гули',skeleton:'Скелеты',drowned:'Утопленники',larva:'Личинки',knight:'Латники',hound:'Гончие',bomber:'Бомбы',archer:'Лучники',cultist:'Культисты',spider:'Пауки',ogre:'Огры',wraith:'Призраки',harpy:'Гарпии',beetle:'Жуки',elite:'Элита',boss:'Боссы'};
 const ENEMY_INFO={
   zombie:{name:'Упырь',desc:'Медлительный мертвец. Прёт напрямую — берёт числом.'},
   bat:{name:'Нетопырь',desc:'Быстрый рой, летит зигзагом. В стае опасен.'},
@@ -1148,6 +1176,20 @@ const ENEMY_INFO={
   brute:{name:'Громила',desc:'Бронированный таран. Иммунен к отбрасыванию, в ярости ускоряется.'},
   warper:{name:'Бес',desc:'Телепортируется к охотнику и бьёт рывком.'},
   gnat:{name:'Мошкара',desc:'Крошечный летучий рой. По одной — ничто, тучей — беда.'},
+  ghoul:{name:'Гуль',desc:'Голодный мертвец, прыткее упыря. Прёт напрямую.'},
+  skeleton:{name:'Скелет',desc:'Костяк, что не знает усталости. Берёт числом.'},
+  drowned:{name:'Утопленник',desc:'Разбухший утопший. Медленный, но живучий.'},
+  larva:{name:'Личинка',desc:'Бледная личинка трупоеда. Крошечная, но кусачая.'},
+  knight:{name:'Скелет-латник',desc:'Костяк в ржавой броне. Таран, иммунный к отбрасыванию.'},
+  hound:{name:'Адская гончая',desc:'Бешеная тварь. Мчит и бросается рывками.'},
+  bomber:{name:'Зомби-бомба',desc:'Разбухший от газа. Лопается огнём при гибели.'},
+  archer:{name:'Скелет-лучник',desc:'Костяной стрелок. Бьёт стрелами издалека.'},
+  cultist:{name:'Культист',desc:'Фанатик в рясе. Мечет тёмные сгустки.'},
+  spider:{name:'Паук',desc:'Гнездовой паук. При гибели рассыпается выводком.'},
+  ogre:{name:'Огр',desc:'Гора гнилой плоти. Бьёт сокрушительно, прёт неумолимо.'},
+  wraith:{name:'Призрак',desc:'Мерцающий дух. Является рывком сквозь пустоту.'},
+  harpy:{name:'Гарпия',desc:'Крылатая бестия. Налетает стаей с высоты.'},
+  beetle:{name:'Трупный жук',desc:'Падальщик в хитине. Медленный, но крепкий.'},
   boss:{name:'Боссы',desc:'Носферату и его слуги. Приходят каждые 3 минуты, бьются по фазам.'},
 };
 const WSTAT={bolt:'Арбалет',orbit:'Серебряные клинки',chain:'Цепная молния',aura:'Кадило',scythe:'Метательный крест',mortar:'Святая вода',bell:'Колокол',lantern:'Фонарь',sword:'Меч веры',bleed:'Кровотечение',shatter:'Кара света',rift:'Огненные разломы',nova_rev:'Святые мощи',bomb:'Бомба'};
@@ -1486,7 +1528,7 @@ function damageEnemy(e,dmg,src,kx,ky){
   run.stats.dmg[src]=(run.stats.dmg[src]||0)+dmg;
   if(run.fused.pyre&&src==='scythe'){ e.burnT=Math.max(e.burnT||0,2.2); e.burnD=Math.max(e.burnD||0,dmg*0.35); } // Крестный огонь: кресты поджигают
   if(run.p.leech>0) run.leechPool+=dmg*0.02*run.p.leech;
-  if(kx&&!e.boss&&!e.elite&&e.type!=='brute'){e.kx+=kx;e.ky+=ky;}
+  if(kx&&!e.boss&&!e.elite&&e.behav!=='tank'){e.kx+=kx;e.ky+=ky;}
   if(meta.settings.dmgnum&&(src!=='aura'||chance(0.3))) addText(e.x+rand(-8,8),e.y-e.r-6,dmg,crit?'#ffb938':'#fff',crit?22:15);
   if(src!=='lantern') A.hitE(); // фонарь жжёт светом — без ритмичного звука удара
   if(src!=='aura') addBurst(e.x,e.y,'#c22038',2,70,0.3,2);
@@ -1518,9 +1560,9 @@ function killEnemy(e){
     _shatterActive=false;
   }
   // слизень делится
-  if(e.type==='slime'&&e.gen<2&&!e.elite){
+  if((e.type==='slime'||e.type==='spider')&&e.gen<2&&!e.elite){
     for(let i=0;i<2;i++){
-      const c=spawnEnemy('slime',e.x+rand(-10,10),e.y+rand(-10,10),{noScale:true});
+      const c=spawnEnemy(e.type,e.x+rand(-10,10),e.y+rand(-10,10),{noScale:true});
       c.gen=e.gen+1;
       c.maxhp=c.hp=Math.max(4,Math.round(e.maxhp*0.42));
       c.r=Math.max(7,Math.round(e.r*0.68));
@@ -1530,11 +1572,18 @@ function killEnemy(e){
       c.kx=rand(-140,140); c.ky=rand(-140,140);
     }
   }
+  if(e.behav==='exploder'&&!e.boss){ // зомби-бомба: лопается огнём, опасна для игрока
+    const er=74;
+    if(dist2(e.x,e.y,run.p.x,run.p.y)<(er+run.p.r)*(er+run.p.r)) damagePlayer(e.dmg*2.2,'bomb');
+    addBurst(e.x,e.y,'#ff8a30',26,260,0.6,3.2); shakeAdd(6); A.nova();
+  }
   // Босс НЕ роняет опыт сам — награда за босса = магнит, собирающий накопленный за бой полевой XP.
   if(!e.boss) gemDrop(e.x,e.y,e.xp);
   if(!e.boss&&!e.elite){
     if(chance(0.0023+run.heartDrop)) run.gems.push({x:e.x,y:e.y,v:0,kind:'heart',mag:false,vx:0,vy:0,t:0});
-    if(chance(0.012)) run.gems.push({x:e.x,y:e.y,v:irand(3,9),kind:'coin',mag:false,vx:0,vy:0,t:0});
+    // монеты по силе врага: мясо почти не даёт, крупные/опасные — выплаты
+    const cc=0.004+e.xp*0.0035;
+    if(chance(cc)) run.gems.push({x:e.x,y:e.y,v:irand(1,2+Math.round(e.xp*1.2)),kind:'coin',mag:false,vx:0,vy:0,t:0});
   }
   if(e.elite) {
     run.stats.elites++;
@@ -2017,7 +2066,12 @@ function updateEnemies(dt){
     else switch(e.behav){
       default:
       case 'chase':
+      case 'exploder': // бомба — обычная погоня, взрыв в killEnemy
         mvx=dx/d*e.spd; mvy=dy/d*e.spd; break;
+      case 'fast':{ // гончая — рывками
+        const lunge=Math.sin(e.t*2.2+e.id)>0.65?1.8:0.85;
+        mvx=dx/d*e.spd*lunge; mvy=dy/d*e.spd*lunge; break;
+      }
       case 'swarm':{
         const a=Math.atan2(dy,dx)+Math.sin(e.t*3.2+e.id)*0.65;
         mvx=Math.cos(a)*e.spd; mvy=Math.sin(a)*e.spd; break;
@@ -2266,13 +2320,15 @@ function diffNow(){
   };
 }
 function pickType(t){
+  // ФОН = трикл дешёвого мяса; опасные типы приходят КОНЕЧНЫМИ волнами (doWave), а не вечно
   const L=run.loc;
   const w=[['zombie',10]];
-  if(t>25)w.push(['bat',(L==='crypt'?9:1)*(t<90?0.6:1)+(t<90?4.5:7)]);
-  if(t>70||L==='swamp')w.push(['slime',L==='swamp'?13:6]);
-  if(t>110)w.push(['spitter',L==='swamp'?6.5:5]);
-  if(t>160)w.push(['brute',(L==='ash'||L==='inferno')?(L==='inferno'?6:4.5):3.5]);
-  if(t>210)w.push(['warper',L==='crypt'?8:((L==='ash'||L==='inferno')?5.5:4)]);
+  if(t>30)w.push(['ghoul',5]);
+  if(t>60)w.push(['skeleton',5]);
+  if(t>40)w.push(['larva',(L==='swamp'||L==='crypt')?5:3]);
+  if(L==='swamp'||L==='crypt')w.push(['drowned',6]); else if(t>140)w.push(['drowned',2]);
+  if(t>100)w.push(['beetle',3]);
+  if(t>50)w.push(['gnat',2]);
   let total=0; for(const x of w) total+=x[1];
   let r=Math.random()*total;
   for(const x of w){r-=x[1];if(r<=0)return x[0];}
@@ -2289,24 +2345,37 @@ function spawnAt(type,o){
   return spawnEnemy(type,p.x+Math.cos(a)*R,p.y+Math.sin(a)*R,o);
 }
 function doWave(t){
+  // КОНЕЧНЫЕ тематические волны: опасный тип приходит ГРУППОЙ — перебил, угроза снята
   const opts=['horde'];
-  if(t>60)opts.push('ring');
+  if(t>45)opts.push('bats');
+  if(t>65)opts.push('hounds');
+  if(t>85)opts.push('spiders');
   if(t>100)opts.push('slimes');
-  if(t>150)opts.push('spitters');
-  if(t>220)opts.push('brutes');
+  if(t>115)opts.push('archers');
+  if(t>135)opts.push('spitters');
+  if(t>155)opts.push('bombers');
+  if(t>180)opts.push('knights');
+  if(t>205)opts.push('cultists');
+  if(t>230)opts.push('warpers');
+  if(t>260)opts.push('ogre');
+  if(t>175)opts.push('brutes');
   const o=pick(opts), p=run.p;
-  if(o==='horde'){ for(let i=0;i<irand(8,13);i++) spawnAt('zombie'); }
-  else if(o==='ring'){
-    const n=22;
-    for(let i=0;i<n;i++){
-      const a=i/n*TAU, R=Math.hypot(W,H)/2+80;
-      spawnEnemy('bat',p.x+Math.cos(a)*R,p.y+Math.sin(a)*R);
-    }
-    showBanner('','стая окружает!');
+  const ring=(type,n)=>{ for(let i=0;i<n;i++){ const a=i/n*TAU, R=Math.hypot(W,H)/2+72; spawnEnemy(type,p.x+Math.cos(a)*R,p.y+Math.sin(a)*R); } };
+  switch(o){
+    case 'horde':   for(let i=0;i<irand(9,14);i++) spawnAt('zombie'); break;
+    case 'bats':    ring('bat',22); showBanner('','стая окружает!'); break;
+    case 'hounds':  for(let i=0;i<irand(5,7);i++) spawnAt('hound'); showBanner('','свора мчится!'); break;
+    case 'spiders': for(let i=0;i<irand(5,8);i++) spawnAt('spider'); showBanner('','выводок пауков'); break;
+    case 'slimes':  for(let i=0;i<irand(6,9);i++) spawnAt('slime'); break;
+    case 'archers': for(let i=0;i<irand(5,7);i++) spawnAt('archer'); showBanner('','залп стрел'); break;
+    case 'spitters':for(let i=0;i<irand(5,8);i++) spawnAt('spitter'); showBanner('','кислотный плевок'); break;
+    case 'bombers': for(let i=0;i<irand(5,8);i++) spawnAt('bomber'); showBanner('','бомбы ползут!'); break;
+    case 'knights': for(let i=0;i<irand(3,4);i++) spawnAt('knight'); showBanner('','латники наступают'); break;
+    case 'cultists':for(let i=0;i<irand(4,6);i++) spawnAt('cultist'); showBanner('','культ собирается'); break;
+    case 'warpers': for(let i=0;i<irand(4,6);i++) spawnAt('warper'); showBanner('','бесы мерцают'); break;
+    case 'brutes':  for(let i=0;i<irand(3,5);i++) spawnAt('brute'); showBanner('','земля дрожит...'); break;
+    case 'ogre':    for(let i=0;i<irand(1,2);i++) spawnAt('ogre'); showBanner('','ОГР!'); break;
   }
-  else if(o==='slimes'){ for(let i=0;i<irand(6,9);i++) spawnAt('slime'); }
-  else if(o==='spitters'){ for(let i=0;i<irand(5,8);i++) spawnAt('spitter'); }
-  else { for(let i=0;i<irand(3,5);i++) spawnAt('brute'); showBanner('','земля дрожит...'); }
 }
 function director(dt){
   const t=run.time;
@@ -2333,9 +2402,11 @@ function director(dt){
     if(run.eliteT<=0){
       run.eliteT=run.loc==='inferno'?46:(run.loc==='ash'?60:78);
       const n=1+Math.floor(t/280);
-      const pool=['zombie','slime','spitter'];
-      if(t>160)pool.push('brute');
-      if(t>210)pool.push('warper');
+      const pool=['ghoul','skeleton','spider','hound','beetle'];
+      if(t>130)pool.push('archer','spitter');
+      if(t>170)pool.push('knight','brute');
+      if(t>210)pool.push('cultist','warper');
+      if(t>260)pool.push('ogre');
       for(let i=0;i<n;i++) spawnAt(pick(pool),{elite:true});
       showBanner('','элита близко...');
     }
@@ -3453,7 +3524,7 @@ const _sprURL={};
 function sprURL(canvas,key){ if(_sprURL[key]!==undefined)return _sprURL[key]; _sprURL[key]=canvas?canvas.toDataURL():''; return _sprURL[key]; }
 function buildBestiary(){
   const g=$('bestGrid'); g.innerHTML='';
-  for(const t of ['zombie','bat','slime','spitter','brute','warper','gnat','boss']){
+  for(const t of ['zombie','ghoul','skeleton','drowned','larva','bat','gnat','harpy','beetle','slime','spider','spitter','archer','cultist','hound','warper','wraith','bomber','knight','brute','ogre','boss']){
     const seen=!!meta.bestiary[t]||(t==='boss'&&meta.stats.bosses>0);
     const info=ENEMY_INFO[t];
     const c=document.createElement('div'); c.className='bcard'+(seen?'':' unseen');
