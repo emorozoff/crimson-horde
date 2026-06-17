@@ -410,7 +410,7 @@ body.ingame,body.ingame *{cursor:none!important;}
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.58';
+const VERSION='0.59';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -3764,6 +3764,49 @@ BOSS_DRAW.deadking=function(e,flashing){
   ctx.restore();
   ctx.fillStyle='rgba(255,240,160,'+(0.3+Math.sin(t*4)*0.2).toFixed(3)+')';
   const cz=R*0.08; for(let i=-1;i<=1;i++){ ctx.fillRect(i*R*0.22-cz/2,-R*0.95-cz/2,cz,cz); }
+  ctx.restore();
+};
+// Людоед — горбатый людоед с ОГРОМНОЙ жующей пастью (процедурно, плоские бэнды; растёт по e.r)
+BOSS_DRAW.maneater=function(e,flashing){
+  const t=e.t, ph=e.phase||0, R=e.r*1.35;
+  const O='#160808',D='#3a2c1e',M='#5a4a30',L='#7c6a44',H='#9a8a5c',MAW='#180606',TT='#7c1420',T2='#b0202e',W='#ece0c8';
+  const ell=(cx,cy,rx,ry,col)=>{ctx.fillStyle=col;ctx.beginPath();ctx.ellipse(cx,cy,rx,ry,0,0,TAU);ctx.fill();};
+  const sway=Math.sin(t*2.2)*R*0.05, bob=Math.abs(Math.sin(t*4.2))*R*0.04, br=1+Math.sin(t*2.6)*0.03;
+  const gn=(Math.sin(t*(4+ph))*0.5+0.5);                 // 0..1 — жевание
+  const step=Math.sin(t*4.2)*R*0.06, reach=Math.sin(t*3)*R*0.08;
+  ctx.save(); ctx.translate(e.x+sway, e.y+bob);
+  // ноги (короткие, поступь)
+  ell(-R*0.34, R*0.84+step, R*0.18, R*0.15, O);
+  ell( R*0.34, R*0.84-step, R*0.18, R*0.15, O);
+  // руки (стубовые, хватают)
+  for(const s of [-1,1]){ ell(s*R*0.8, R*0.18+(s>0?reach:-reach), R*0.22, R*0.34, D); ell(s*R*0.88, R*0.46, R*0.15, R*0.16, O); }
+  // тело (горбатая масса, плоские бэнды, дыхание)
+  ctx.save(); ctx.scale(1, br);
+  ell(0,-R*0.05, R*0.92, R*0.96, O);
+  ell(0,-R*0.05, R*0.84, R*0.88, D);
+  ell(-R*0.04,-R*0.18, R*0.66, R*0.64, M);
+  ell(-R*0.1,-R*0.34, R*0.4, R*0.36, L);
+  ell(-R*0.18,-R*0.44, R*0.18, R*0.16, H);
+  ctx.restore();
+  // глаза (мелкие, красные, голодные)
+  const eg=clamp(0.6+Math.sin(t*5)*0.3,0.3,1);
+  ctx.fillStyle='rgba(255,48,38,'+eg.toFixed(2)+')';
+  ctx.fillRect(-R*0.28,-R*0.36,R*0.11,R*0.11); ctx.fillRect(R*0.17,-R*0.36,R*0.11,R*0.11);
+  // ПАСТЬ (огромная, жуёт)
+  const open=R*(0.12+gn*(0.28+ph*0.05)), mw=R*0.66, my=R*0.28;
+  ctx.fillStyle=MAW; ctx.beginPath(); ctx.ellipse(0,my,mw,open+R*0.16,0,0,TAU); ctx.fill();
+  ctx.fillStyle=TT; ctx.beginPath(); ctx.ellipse(0,my+open*0.35,mw*0.6,open*0.65+R*0.05,0,0,TAU); ctx.fill();
+  ctx.fillStyle=T2; ctx.beginPath(); ctx.ellipse(0,my+open*0.5,mw*0.32,open*0.38+R*0.03,0,0,TAU); ctx.fill();
+  ctx.fillStyle=W; const nT=7;
+  for(let i=0;i<nT;i++){ const fx=-mw*0.84+i*(mw*1.68/(nT-1)), fw=mw*0.13;
+    ctx.beginPath(); ctx.moveTo(fx-fw/2,my-open-R*0.03); ctx.lineTo(fx+fw/2,my-open-R*0.03); ctx.lineTo(fx,my-open+R*0.13); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(fx-fw/2,my+open+R*0.05); ctx.lineTo(fx+fw/2,my+open+R*0.05); ctx.lineTo(fx,my+open-R*0.11); ctx.closePath(); ctx.fill();
+  }
+  // слюна (тянется/капает)
+  ctx.strokeStyle='rgba(220,232,205,0.5)'; ctx.lineWidth=R*0.03; ctx.lineCap='round';
+  for(let i=0;i<2;i++){ const dx=(i?1:-1)*mw*0.42, dl=R*(0.08+((t*0.7+i*0.5)%1)*0.5); ctx.beginPath(); ctx.moveTo(dx,my-open+R*0.12); ctx.lineTo(dx,my-open+R*0.12+dl); ctx.stroke(); }
+  // вспышка урона
+  if(flashing){ ctx.globalAlpha=clamp(e.flash*4,0,0.5); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.ellipse(0,-R*0.05,R*0.92,R*0.96,0,0,TAU); ctx.fill(); ctx.globalAlpha=1; }
   ctx.restore();
 };
 function drawEnemy(e){
