@@ -161,11 +161,30 @@ h1,h2,.serif{font-family:var(--pix);}
 .bcard .bdesc{font-family:var(--ui);font-size:12px;color:#a896a2;margin-top:4px;line-height:1.4;}
 .bcard.unseen{opacity:.6;}
 .bcard.unseen .bname{color:#6a5a64;}
-#achList{display:flex;flex-direction:column;gap:5px;width:min(560px,90vw);max-height:30vh;overflow-y:auto;}
-.ach{display:flex;justify-content:space-between;gap:10px;padding:7px 12px;border:1px solid #2a1a22;border-radius:6px;background:#150d12;font-size:13px;}
-.ach.done{border-color:#5a4a10;background:#1c1408;}
-.ach .an{color:#cbb;}.ach.done .an{color:var(--gold);}
-.ach .ad{color:var(--dim);font-size:11px;}
+/* достижения: пиксельные карточки с иконкой + прогресс-бар (Заход 8C) */
+#achList{display:flex;flex-direction:column;gap:7px;width:min(600px,92vw);max-height:42vh;overflow-y:auto;padding:2px;}
+.ach{display:flex;align-items:center;gap:11px;padding:8px 11px;border:3px solid #2a1a22;border-radius:0;background:linear-gradient(180deg,#170e13,#100a0e);box-shadow:inset 0 0 0 1px #0c0709;image-rendering:pixelated;}
+.ach.done{border-color:#6a5410;background:linear-gradient(180deg,#241a08,#160f06);}
+.ach .aico{width:38px;height:38px;image-rendering:pixelated;flex:none;opacity:.45;filter:grayscale(.7);}
+.ach.done .aico{opacity:1;filter:none;}
+.ach .acol{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
+.ach .atop{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+.ach .an{font-family:var(--pix);font-size:16px;letter-spacing:.5px;color:#bdb2bb;}
+.ach.done .an{color:var(--gold);}
+.ach .apct{font-family:var(--pix);font-size:14px;color:#7a6f78;flex:none;}
+.ach.done .apct{color:#7ce86a;}
+.ach .ad{font-family:var(--ui);color:var(--dim);font-size:11px;line-height:1.3;}
+.ach .aval{color:#a8a0aa;}
+.ach .abar{height:7px;background:#0c0709;border:1px solid #2a1a22;overflow:hidden;margin-top:1px;}
+.ach .afill{height:100%;background:linear-gradient(90deg,#8c1426,#d4203a);}
+.ach.done .afill{background:linear-gradient(90deg,#9a7820,#e7b54a);}
+/* всплывающая карточка достижения в бою */
+#achPops{position:fixed;right:14px;top:84px;display:flex;flex-direction:column;gap:8px;z-index:60;pointer-events:none;}
+.achpop{display:flex;align-items:center;gap:10px;padding:8px 14px 8px 10px;border:3px solid #6a5410;background:linear-gradient(180deg,#241a08,#140d05);box-shadow:0 4px 14px rgba(0,0,0,.5),inset 0 0 0 1px #0c0709;image-rendering:pixelated;transform:translateX(120%);opacity:0;transition:transform .38s cubic-bezier(.2,1.1,.3,1),opacity .38s;}
+.achpop.show{transform:translateX(0);opacity:1;}
+.achpop img{width:42px;height:42px;image-rendering:pixelated;flex:none;}
+.achpop .apt{font-family:var(--pix);font-size:11px;letter-spacing:2px;color:#e7b54a;}
+.achpop .apn{font-family:var(--pix);font-size:17px;color:#fff;letter-spacing:.5px;}
 @media (max-width:640px){
   #hudItems{top:86px;max-width:140px;gap:5px;}
   #hudWeapons{gap:4px;}
@@ -294,6 +313,7 @@ body.ingame,body.ingame *{cursor:none!important;}
 </div>
 
 <div id="banner"><div id="bannerBig"></div><div id="bannerSmall"></div></div>
+<div id="achPops"></div>
 <div id="btnPauseTouch">❚❚</div>
 <div id="verCorner"></div>
 <div id="devPanel"></div>
@@ -415,7 +435,7 @@ body.ingame,body.ingame *{cursor:none!important;}
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.71';
+const VERSION='0.74';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -648,7 +668,7 @@ const META_DEFS=[
 function _isTouch(){ try{ return !!(navigator.maxTouchPoints>0 || ('ontouchstart' in window)); }catch(e){ return false; } } // мобильный дефолт перф (Заход 7 моб.)
 function defaultMeta(){
   return {gold:0, up:{}, best:null, loc:'grave', hero:'hunter', heroes:{hunter:true}, bestiary:{}, ach:{},
-    stats:{runs:0,kills:0,bosses:0,wins:0,playtime:0,bestKills:0,bestCombo:0,locBest:{},heroBest:{},wpnDmg:{}},
+    stats:{runs:0,kills:0,bosses:0,wins:0,playtime:0,bestKills:0,bestCombo:0,goldTotal:0,bestLevel:0,evos:0,fusions:0,weaponMaxed:0,noHitBest:0,locBest:{},heroBest:{},wpnDmg:{}},
     settings:{master:0.8, music:0.7, sfx:0.9, shake:1, hpbar:true, dmgnum:true, perf:_isTouch(), fps:false}};
 }
 // «переменная сессии» — основное хранилище; localStorage — необязательный бэкап
@@ -678,7 +698,7 @@ function sanitizeMeta(o){
   if(!m.bestiary||typeof m.bestiary!=='object') m.bestiary={};
   if(!m.ach||typeof m.ach!=='object') m.ach={};
   if(!m.stats||typeof m.stats!=='object') m.stats={};
-  for(const k of ['runs','kills','bosses','wins','playtime','bestKills','bestCombo']) m.stats[k]=Number.isFinite(m.stats[k])?m.stats[k]:0;
+  for(const k of ['runs','kills','bosses','wins','playtime','bestKills','bestCombo','goldTotal','bestLevel','evos','fusions','weaponMaxed','noHitBest']) m.stats[k]=Number.isFinite(m.stats[k])?m.stats[k]:0;
   for(const k of ['locBest','heroBest','wpnDmg']) if(!m.stats[k]||typeof m.stats[k]!=='object') m.stats[k]={};
   return m;
 }
@@ -1355,7 +1375,8 @@ function newRun(){
     time:0, level:1, xp:0, xpNext:xpNeeded(1), lvlQueue:0, choices:[],
     en:[], pb:[], eb:[], gems:[], parts:[], texts:[], decals:[], fx:[],
     pots:[], pools:[], rifts:[], riftT:6,
-    flayPools:[], flaySlowT:0, tides:[], tideZones:[], tideSlow:false, torches:[],
+    flayPools:[], flaySlowT:0, poisonT:0, poisonDps:0, flaySlimes:[], tides:[], tideZones:[], tideSlow:false, torches:[],
+    crowFog:[], kingSpikes:[], kingDark:0,
     loc:L.id, hero:H.id,
     p:{x:0,y:0,r:12,hp:maxhp,maxhp:maxhp,face:1,
        spdMul:1+mb.spd+(m.spd||0), regen:mb.reg, magBase:38, magMul:1+mb.mag,
@@ -1370,6 +1391,7 @@ function newRun(){
     spawnT:1.4, waveT:55, eliteT:115, bossT:180, bossIdx:0, bossTier:0, bossRef:null,
     finalSpawned:false, won:false,
     combo:0, comboT:0, comboMax:0,
+    noHitT:0, noHitMax:0, achCheckT:1.0, // без-урона + троттл live-проверки ачивок (8C)
     goldBonus:0, earned:0,
     stats:{kills:0,killsBy:{},dmg:{},dmgTaken:0,gems:0,bosses:0,elites:0,chests:0,blocked:0},
   };
@@ -1466,21 +1488,21 @@ function rollUpgrades(){
 }
 function applyUpgrade(d){
   if(d.kind==='evo'){
-    run.evo[d.id]=true;
+    run.evo[d.id]=true; meta.stats.evos=(meta.stats.evos||0)+1; // счётчик эволюций (8C)
     showBanner(d.name,'ЭВОЛЮЦИЯ');
     addBurst(run.p.x,run.p.y,'#ffe08a',32,260,0.7,3.2);
     A.lvlup(); flashGold(); hitStopAdd(0.07);
     return;
   }
   if(d.kind==='fusion'){
-    run.fused[d.id]=true;
+    run.fused[d.id]=true; meta.stats.fusions=(meta.stats.fusions||0)+1; // счётчик слияний (8C)
     showBanner(d.name,'СЛИЯНИЕ');
     addBurst(run.p.x,run.p.y,'#c77dff',34,280,0.75,3.4);
     A.lvlup(); flashGold(); hitStopAdd(0.08);
     return;
   }
   run.taken[d.id]=(run.taken[d.id]||0)+1;
-  if(d.kind==='w') run.weapons[d.id]++;
+  if(d.kind==='w'){ run.weapons[d.id]++; if(run.weapons[d.id]===5) meta.stats.weaponMaxed=(meta.stats.weaponMaxed||0)+1; } // оружие до lv5 (===5, чтобы Арбалет max:6 не двоил — фикс ревью 8C)
   else if(d.apply) d.apply(run);
 }
 function noChoices(){
@@ -1725,7 +1747,7 @@ function winGame(){
   recordRun(true);
   A.victory();
   run.earned=Math.max(0,Math.round(run.goldBonus*run.goldMul)); // золото = ТОЛЬКО собранные монеты (Заход 6)
-  meta.gold+=run.earned;
+  meta.gold+=run.earned; meta.stats.goldTotal=(meta.stats.goldTotal||0)+run.earned; checkAchievements(); // лайфтайм золото + скан ПОСЛЕ прибавки (ачивка «Богач», фикс ревью 8C)
   if(!meta.best||run.time>meta.best.time) meta.best={time:run.time,level:run.level,kills:s.kills};
   saveMeta();
   A.bossDie(); shakeAdd(20);
@@ -1760,6 +1782,7 @@ function damagePlayer(d,src){
   const p=run.p;
   if(p.god||p.inv>0||state!=='playing') return;
   d=Math.max(1,Math.round(d-p.armor));
+  run.noHitT=0; // получил урон → сброс счётчика «без царапины» (8C)
   run.stats.dmgTaken+=Math.min(d,Math.ceil(p.hp)); // без оверкилла в статистике
   p.hp-=d; p.inv=0.18;
   $('dmgflash').style.opacity=0.9;
@@ -1790,37 +1813,97 @@ function recordRun(won){
   st.heroBest[run.hero]=Math.max(st.heroBest[run.hero]||0, run.time);
   for(const k in s.dmg) st.wpnDmg[k]=Math.max(st.wpnDmg[k]||0, Math.round(s.dmg[k]));
   if((run.comboMax||0)>st.bestCombo) st.bestCombo=run.comboMax;
+  st.bestLevel=Math.max(st.bestLevel||0, run.level||1);
+  st.noHitBest=Math.max(st.noHitBest||0, run.noHitMax||0);
   checkAchievements();
 }
-const ACHIEVEMENTS=[
-  {id:'first',  name:'Первая ночь',     desc:'Сыграть первый забег',     gold:50,  check:m=>m.stats.runs>=1},
-  {id:'kill1k', name:'Истребитель',     desc:'1000 убийств всего',       gold:100, check:m=>m.stats.kills>=1000},
-  {id:'kill10k',name:'Палач',           desc:'10 000 убийств всего',     gold:300, check:m=>m.stats.kills>=10000},
-  {id:'boss5',  name:'Гроза нечисти',   desc:'Повергнуть 5 боссов всего',gold:150, check:m=>m.stats.bosses>=5},
-  {id:'survive10',name:'Долгожитель',   desc:'Дожить до 10:00 за ночь',  gold:200, check:m=>maxBest(m)>=600},
-  {id:'win',    name:'Рассвет',         desc:'Пережить ночь (победа)',   gold:500, check:m=>m.stats.wins>=1},
-  {id:'combo50',name:'Кровавая жатва',  desc:'Серия ×50 за ночь',        gold:150, check:m=>m.stats.bestCombo>=50},
-  {id:'order',  name:'Орден',           desc:'Открыть всех героев',      gold:300, check:m=>HEROES.every(h=>h.cost===0||m.heroes[h.id])},
-];
 function maxBest(m){let x=0;for(const k in m.stats.locBest)x=Math.max(x,m.stats.locBest[k]);return x;}
-function checkAchievements(){
-  let unlocked=0, reward=0, lastName='';
-  for(const a of ACHIEVEMENTS){
-    if(!meta.ach[a.id]&&a.check(meta)){ meta.ach[a.id]=true; meta.gold+=a.gold; unlocked++; reward+=a.gold; lastName=a.name; }
-  }
-  if(unlocked>0){
-    saveMeta();
-    showBanner('ДОСТИЖЕНИЕ: '+lastName, (unlocked>1?'+'+(unlocked-1)+' ещё · ':'')+'+◆'+reward, 3000);
-    A.chestS();
-  }
+// ----- пиксельные иконки достижений (по категориям) -----
+const _ACHP={ w:'#d8d0bc', k:'#1a1018', y:'#e7b54a', o:'#9a3a2a', l:'#cfd0d8',
+  S:'#ffe07a', O:'#ff9a3a', r:'#c83040', G:'#e8c24a', g:'#9a7820', b:'#7a3a26',
+  p:'#e7ddc8', c:'#cfd6e2', P:'#c77dff', m:'#9aa0a8', B:'#5a7cff', q:'#c8b486',
+  t:'#6a6a74', f:'#caa94a' };
+const ACH_ICONS={
+  skull: px(['.wwwww.','wwwwwww','wkwwwkw','wwwwwww','wwkwkww','.wwwww.','.w.w.w.'],_ACHP,4),
+  crown: px(['y.y.y.y','yyyyyyy','yoyoyoy','yyyyyyy','.yyyyy.'],_ACHP,4),
+  moon:  px(['.llll..','ll.....','l......','l......','l......','ll.....','.llll..'],_ACHP,4),
+  sun:   px(['S..S..S','.SOOOS.','SOOOOOS','SOOOOOS','SOOOOOS','.SOOOS.','S..S..S'],_ACHP,4),
+  blood: px(['...r...','..rrr..','..rrr..','.rrrrr.','rrrrrrr','rrrrrrr','.rrrrr.'],_ACHP,4),
+  medal: px(['y.....y','.y...y.','.yGGGy.','.GGGGG.','.GGGGG.','..GGG..','...y...'],_ACHP,4),
+  clock: px(['.fffff.','ffwwwff','fwwfwwf','fwwffwf','fwwwwwf','ffwwwff','.fffff.'],_ACHP,4),
+  star:  px(['...S...','..SSS..','SSSSSSS','.SSSSS.','..SSS..','.SS.SS.','.S...S.'],_ACHP,4),
+  book:  px(['.bbbbb.','bpppppb','bppwppb','bpwwwpb','bppwppb','bpppppb','.bbbbb.'],_ACHP,4),
+  sword: px(['.....cc','....cc.','...cc..','g.cc...','gcc....','gc.....','b......'],_ACHP,4),
+  spark: px(['...S...','...S...','.S.S.S.','..SSS..','.S.S.S.','...S...','...S...'],_ACHP,4),
+  merge: px(['P.....P','.P...P.','..PPP..','.PPPPP.','..PPP..','.P...P.','P.....P'],_ACHP,4),
+  coin:  px(['.GGGGG.','GGyyyGG','GyGGGyG','GyGGGyG','GyGGGyG','GGyyyGG','.GGGGG.'],_ACHP,4),
+  map:   px(['qqqqqqq','qrq.qrq','qqr.rqq','qq.r.qq','qqr.rqq','qrq.qrq','qqqqqqq'],_ACHP,4),
+  shield:px(['mmmmmmm','mBBBBBm','mBBBBBm','mBBBBBm','.mBBBm.','..mBm..','...m...'],_ACHP,4),
+};
+const _achURL={};
+function achIcoURL(key){ if(_achURL[key]!==undefined) return _achURL[key]; const c=ACH_ICONS[key]; _achURL[key]=c?c.toDataURL():''; return _achURL[key]; }
+const _BESTN=22; // размер ростера бестиария (21 враг + босс)
+// ----- достижения: прогресс cur/goal (НЕ bool), иконка, сортировка по % -----
+const ACHIEVEMENTS=[
+  {id:'first',   name:'Первая ночь',    desc:'Сыграть первый забег',     icon:'star',  cur:m=>m.stats.runs, goal:1},
+  {id:'veteran', name:'Завсегдатай',    desc:'25 ночей сыграно',         icon:'star',  cur:m=>m.stats.runs, goal:25},
+  {id:'nightw',  name:'Ночной дозор',   desc:'100 ночей сыграно',        icon:'star',  cur:m=>m.stats.runs, goal:100},
+  {id:'kill1k',  name:'Истребитель',    desc:'1 000 убийств всего',      icon:'skull', cur:m=>m.stats.kills, goal:1000},
+  {id:'kill10k', name:'Палач',          desc:'10 000 убийств всего',     icon:'skull', cur:m=>m.stats.kills, goal:10000},
+  {id:'kill50k', name:'Жнец',           desc:'50 000 убийств всего',     icon:'skull', cur:m=>m.stats.kills, goal:50000},
+  {id:'resn',    name:'Резня за ночь',  desc:'1 500 убийств за ночь',    icon:'blood', cur:m=>m.stats.bestKills, goal:1500},
+  {id:'boss5',   name:'Гроза нечисти',  desc:'Повергнуть 5 боссов',      icon:'crown', cur:m=>m.stats.bosses, goal:5},
+  {id:'boss25',  name:'Охотник на боссов',desc:'Повергнуть 25 боссов',   icon:'crown', cur:m=>m.stats.bosses, goal:25},
+  {id:'surv10',  name:'Долгожитель',    desc:'Дожить до 10:00 за ночь',  icon:'moon',  cur:m=>maxBest(m), goal:600},
+  {id:'surv12',  name:'Стойкий',        desc:'Дожить до 12:00 за ночь',  icon:'moon',  cur:m=>maxBest(m), goal:720},
+  {id:'win',     name:'Рассвет',        desc:'Пережить ночь (победа)',   icon:'sun',   cur:m=>m.stats.wins, goal:1},
+  {id:'win10',   name:'Несокрушимый',   desc:'10 побед',                 icon:'sun',   cur:m=>m.stats.wins, goal:10},
+  {id:'combo50', name:'Кровавая жатва', desc:'Серия ×50 за ночь',        icon:'blood', cur:m=>m.stats.bestCombo, goal:50},
+  {id:'combo150',name:'Мясорубка',      desc:'Серия ×150 за ночь',       icon:'blood', cur:m=>m.stats.bestCombo, goal:150},
+  {id:'order',   name:'Орден',          desc:'Открыть всех героев',      icon:'medal', cur:m=>HEROES.filter(h=>h.cost===0||m.heroes[h.id]).length, goal:HEROES.length},
+  {id:'wander',  name:'Странник',       desc:'Сыграть на всех локациях', icon:'map',   cur:m=>Object.keys(m.stats.locBest||{}).length, goal:LOCS.length},
+  {id:'play1h',  name:'Ветеран',        desc:'1 час в игре',             icon:'clock', cur:m=>m.stats.playtime, goal:3600},
+  {id:'play5h',  name:'Марафонец',      desc:'5 часов в игре',           icon:'clock', cur:m=>m.stats.playtime, goal:18000},
+  {id:'collect', name:'Коллекционер',   desc:'Открыть весь бестиарий',   icon:'book',  cur:m=>Math.min(_BESTN,Object.values(m.bestiary||{}).filter(Boolean).length), goal:_BESTN}, // 'boss' уже пишется в bestiary при спавне — без двойного учёта (фикс ревью 8C)
+  {id:'level30', name:'Восхождение',    desc:'Уровень 30 за ночь',       icon:'star',  cur:m=>m.stats.bestLevel||0, goal:30},
+  {id:'arsenal', name:'Арсенал',        desc:'Прокачать оружие до lv5',  icon:'sword', cur:m=>m.stats.weaponMaxed||0, goal:1},
+  {id:'evo',     name:'Эволюция',       desc:'Получить эволюцию оружия', icon:'spark', cur:m=>m.stats.evos||0, goal:1},
+  {id:'fusion',  name:'Слияние',        desc:'Совершить слияние оружия', icon:'merge', cur:m=>m.stats.fusions||0, goal:1},
+  {id:'rich',    name:'Богач',          desc:'Собрать 10 000 золота всего',icon:'coin',cur:m=>m.stats.goldTotal||0, goal:10000},
+  {id:'crypt',   name:'Скупщик',        desc:'Скупить все улучшения Склепа',icon:'coin',cur:m=>META_DEFS.reduce((s,d)=>s+metaLv(d.id),0), goal:META_DEFS.reduce((s,d)=>s+d.max,0)},
+  {id:'nohit',   name:'Без царапины',   desc:'Дожить 5:00 без урона',    icon:'shield',cur:m=>m.stats.noHitBest||0, goal:300},
+];
+function achProg(a){ const c=a.cur(meta); return {cur:c, goal:a.goal, pct:clamp(c/a.goal,0,1), done:c>=a.goal}; }
+// «живая» мета: лайфтайм-статы + прогресс ТЕКУЩЕГО забега (для разблокировки В БОЮ).
+// evo/fusion/weaponMaxed/goldTotal пишутся в meta.stats напрямую — их НЕ домешиваем.
+function metaLive(){
+  if(!run) return meta;
+  const st=meta.stats, s=run.stats;
+  return {...meta, stats:{...st,
+    kills: st.kills+s.kills, bosses: st.bosses+s.bosses,
+    bestKills: Math.max(st.bestKills, s.kills),
+    bestCombo: Math.max(st.bestCombo, run.comboMax||0),
+    playtime: st.playtime+Math.round(run.time),
+    bestLevel: Math.max(st.bestLevel, run.level||1),
+    noHitBest: Math.max(st.noHitBest, run.noHitMax||0)
+  }};
 }
+function _achScan(mv){
+  let unlocked=0;
+  for(const a of ACHIEVEMENTS){
+    if(!meta.ach[a.id] && a.cur(mv)>=a.goal){ meta.ach[a.id]=true; unlocked++; achPop(a); } // золото убрано (Заход 8C)
+  }
+  if(unlocked>0){ saveMeta(); A.chestS(); }
+}
+function checkAchievements(){ _achScan(meta); }            // конец забега (статы уже свёрнуты в recordRun)
+function checkAchievementsLive(){ _achScan(metaLive()); }  // в бою (мета + текущий забег)
 function gameOver(){
   const s=run.stats;
   $('lowhp').classList.remove('on');
   $('banner').classList.remove('show');
   recordRun(false);
   run.earned=Math.max(0,Math.round(run.goldBonus*run.goldMul)); // золото = ТОЛЬКО собранные монеты (Заход 6)
-  meta.gold+=run.earned;
+  meta.gold+=run.earned; meta.stats.goldTotal=(meta.stats.goldTotal||0)+run.earned; checkAchievements(); // лайфтайм золото + скан ПОСЛЕ прибавки (ачивка «Богач», фикс ревью 8C)
   if(!meta.best||run.time>meta.best.time) meta.best={time:run.time,level:run.level,kills:s.kills};
   saveMeta();
   A.death();
@@ -2245,6 +2328,7 @@ function updateEnemies(dt){
         }
       }
     }
+    if(e.stampT>0&&!e.boss){ e.stampT-=dt; const aa=Math.atan2(p.y-e.y,p.x-e.x); e.x+=Math.cos(aa)*300*dt; e.y+=Math.sin(aa)*300*dt; } // СТАМПИД Пастыря: драйв ПОВЕРХ позиции (не затирает нокбэк оружия — фикс ревью 8B)
     if(!e.boss){
       e.x+=(mvx*sf+e.kx)*dt;
       e.y+=(mvy*sf+e.ky)*dt;
@@ -2379,8 +2463,8 @@ BOSS_MECH.maneater=function(e,dt,dx,dy,d,sf){
 };
 // ============================== БОССЫ #3–#8 (механики; визуал-детализация — UI-агент) ==============================
 function spawnFlayPool(x,y,r,life,dps){
-  if(run.flayPools.length>=14) run.flayPools.shift();
-  run.flayPools.push({x,y,r,t:life,max:life,dps,tick:0.2});
+  if(run.flayPools.length>=16) run.flayPools.shift();
+  run.flayPools.push({x,y,r,t:life,max:life,dps,tick:0.2,seed:hash2(Math.round(x),Math.round(y))});
 }
 function updateFlayPools(dt){
   const p=run.p;
@@ -2389,21 +2473,35 @@ function updateFlayPools(dt){
     q.tick-=dt;
     if(q.tick<=0){
       q.tick=0.35;
-      if(dist2(q.x,q.y,p.x,p.y)<(q.r+p.r)*(q.r+p.r)){ damagePlayer(q.dps,'sludge'); run.flaySlowT=Math.max(run.flaySlowT,0.5); }
+      if(dist2(q.x,q.y,p.x,p.y)<(q.r+p.r)*(q.r+p.r)){ damagePlayer(q.dps,'sludge'); run.flaySlowT=Math.max(run.flaySlowT,0.5); run.poisonT=2.0; run.poisonDps=Math.max(run.poisonDps,q.dps*0.5); } // контакт с гнилью → отравление 2с
     }
     if(chance(0.18)&&run.parts.length<560)
       run.parts.push({x:q.x+rand(-q.r,q.r)*0.7,y:q.y+rand(-q.r,q.r)*0.6,vx:0,vy:-rand(6,18),life:rand(0.4,0.9),max:0.9,color:'#7bbf3a',size:rand(1.6,3)});
   }
   if(run.flaySlowT>0) run.flaySlowT-=dt;
-  sweep(run.flayPools);
+  // --- ЯД: тик-урон ещё ~2с после контакта с гнилью/слизью (даже вне лужи — гонит дальше) ---
+  if(run.poisonT>0){
+    run.poisonT-=dt;
+    run._poisonTick=(run._poisonTick||0)-dt;
+    if(run._poisonTick<=0){ run._poisonTick=0.5; damagePlayer(run.poisonDps,'sludge'); if(run.parts.length<560) run.parts.push({x:p.x+rand(-9,9),y:p.y-rand(8,20),vx:0,vy:-rand(10,22),life:0.5,max:0.5,color:'#9ed94a',size:rand(1.5,2.6)}); }
+  } else run.poisonDps=0;
+  // --- летящие комки слизи Палача: долетели до точки → лужа ПОД игроком ---
+  for(const s of run.flaySlimes){
+    s.t-=dt;
+    const k=clamp(1-s.t/s.T,0,1);
+    s.x=s.x0+(s.tx-s.x0)*k; s.y=s.y0+(s.ty-s.y0)*k - Math.sin(k*Math.PI)*64; // дуга броска
+    if(s.t<=0){ s.dead=true; spawnFlayPool(s.tx,s.ty,s.r,s.life,s.dps); addBurst(s.tx,s.ty,'#7bbf3a',12,140,0.4,2.6); A.fizz(); shakeAdd(2); }
+  }
+  sweep(run.flayPools); sweep(run.flaySlimes);
 }
 BOSS_MECH.flayer=function(e,dt,dx,dy,d,sf){
   // --- ранняя инициализация (один раз) ---
-  if(e.trail===undefined){ e.trail=0; e.dropCd=0; e._enr2=false; }
+  if(e.trail===undefined){ e.trail=0; e.dropCd=0; e._enr2=false; e.slimeCd=2.0; }
+  const pl=run.p;
   const f=e.hp/e.maxhp;
   e.phase=f>0.5?0:f>0.25?1:2;                                    // как у matron/maneater
-  // параметры фаз: размер/жизнь/урон лужи и частота капель растут к финалу
-  const poolR   =[58,70,84][e.phase];
+  // параметры фаз: размер/жизнь/урон лужи и частота капель растут к финалу (Заход 8B: лужи КРУПНЕЕ)
+  const poolR   =[80,96,114][e.phase];
   const poolLife=[5.0,6.0,7.0][e.phase];
   const poolDps =e.dmg*([0.42,0.5,0.6][e.phase]);                // DoT-урон лужи (масштаб от dmg босса)
   const dropInt =[0.85,0.6,0.42][e.phase];                       // как часто капает лужа под ногами
@@ -2453,6 +2551,18 @@ BOSS_MECH.flayer=function(e,dt,dx,dy,d,sf){
     addBurst(e.x,e.y,'#6e9a32',18,160,0.5,3); A.nova(); shakeAdd(4);
   }
 
+  // --- БРОСОК СЛИЗИ В ИГРОКА: комок летит в текущую точку игрока → там вырастает лужа (гонит с места) ---
+  e.slimeCd-=dt;
+  if(e.slimeCd<=0){
+    e.slimeCd=[2.6,2.0,1.5][e.phase];
+    const k=[1,2,3][e.phase];                                   // в фазах — несколько комков (под игрока + рядом)
+    for(let i=0;i<k;i++){
+      const tx=pl.x+(i?rand(-95,95):0), ty=pl.y+(i?rand(-95,95):0);
+      run.flaySlimes.push({x0:e.x,y0:e.y,x:e.x,y:e.y,tx,ty,t:0.55,T:0.55,r:poolR*0.9,life:poolLife,dps:poolDps});
+    }
+    A.warp();
+  }
+
   // --- вход в фазу 2 (<=25% HP): разовый «гнилостный потоп» вокруг ---
   if(e.phase===2&&!e._enr2){
     e._enr2=true;
@@ -2460,90 +2570,117 @@ BOSS_MECH.flayer=function(e,dt,dx,dy,d,sf){
     addBurst(e.x,e.y,'#8ac040',28,210,0.6,3.4); A.roar(); shakeAdd(10);
   }
 };
+function updateCrowFog(dt){
+  if(!run.crowFog||!run.crowFog.length) return;
+  if(!(run.bossRef&&!run.bossRef.dead&&run.bossRef.bkind==='shepherd')){ run.crowFog.length=0; return; } // пастырь мёртв → туман рассеивается (фикс ревью 8B)
+  const p=run.p;
+  for(const z of run.crowFog){
+    z.t-=dt; if(z.t<=0){ z.dead=true; continue; }
+    z.tick-=dt;
+    if(z.tick<=0){ z.tick=0.4; if(dist2(z.x,z.y,p.x,p.y)<(z.r+p.r)*(z.r+p.r)) damagePlayer(z.dmg,'crow'); }
+    if(chance(0.3)&&run.parts.length<560) run.parts.push({x:z.x+rand(-z.r,z.r)*0.7,y:z.y+rand(-z.r,z.r)*0.7,vx:rand(-30,30),vy:-rand(6,26),life:rand(0.3,0.7),max:0.7,color:'#15101c',size:rand(1.6,3.2)});
+  }
+  sweep(run.crowFog);
+}
+// ЛАВИНА (Заход 8B): фронт-полоса из-за края экрана идёт К Утопленнице сквозь игрока, толкая его К ней
+function spawnAvalanche(e,count){
+  const p=run.p;
+  for(let k=0;k<count;k++){
+    let a=Math.atan2(e.y-p.y,e.x-p.x);            // направление = К боссу (от игрока)
+    if(count>1) a+=(k-(count-1)/2)*0.5;           // веер при множественных
+    const dxn=Math.cos(a), dyn=Math.sin(a);
+    const startDist=Math.hypot(W,H)*0.62+90;       // старт ЗА краем экрана, позади игрока
+    const distToBoss=Math.hypot(e.x-p.x,e.y-p.y);
+    run.tides.push({
+      sx:p.x-dxn*startDist, sy:p.y-dyn*startDist, dx:dxn, dy:dyn, traveled:0,
+      len:startDist+distToBoss+420, speed:(760+e.phase*80), // дольше живёт + быстрее любого игрока (фикс ревью 8B: не промахивается)
+      halfW:Math.hypot(W,H)*0.55, dmg:e.dmg*0.9, push:(210+e.phase*45), hitP:0, hit:{}
+    });
+  }
+  A.nova(); shakeAdd(4);
+}
 function updateTides(dt){
   if(!run.tides) return;
   const aliveDrowned=run.bossRef&&!run.bossRef.dead&&run.bossRef.bkind==='drowned';
-  if(!aliveDrowned) run.tides.length=0; // Утопленница мертва → катящиеся волны гасим (лужи дотают сами, slow снимется когда исчезнут)
+  if(!aliveDrowned) run.tides.length=0;            // Утопленница мертва → лавины гасим (лужи у тела дотают сами)
   const p=run.p;
   for(const w of run.tides){
-    w.r+=w.spd*dt;
-    const dp=Math.sqrt(dist2(w.x,w.y,p.x,p.y));
-    if(!w.hitP && dp>=w.r-22 && dp<=w.r+p.r+10){ w.hitP=1; damagePlayer(w.dmg,'tide'); const a=Math.atan2(p.y-w.y,p.x-w.x); p.x+=Math.cos(a)*30; p.y+=Math.sin(a)*30; }
-    if(w.r<560) forNear(w.x,w.y,w.r+30,en=>{ if(en.dead||en.boss||w.hit[en.id]) return; const dd=Math.sqrt(dist2(w.x,w.y,en.x,en.y)); if(dd>=w.r-22&&dd<=w.r+en.r){ w.hit[en.id]=1; damageEnemy(en,w.dmg*0.6,'tide'); applySlow(en,0.6,1.2); } });
-    w.dropAcc-=dt;
-    if(w.dropAcc<=0 && run.tideZones.length<22){ w.dropAcc=0.16; const a=rand(0,TAU); run.tideZones.push({x:w.x+Math.cos(a)*w.r,y:w.y+Math.sin(a)*w.r,r:46,t:w.puddleLife,max:w.puddleLife}); }
-    if(w.r>=w.maxR) w.dead=true;
+    w.traveled+=w.speed*dt;
+    const pProj=(p.x-w.sx)*w.dx+(p.y-w.sy)*w.dy;            // позиция игрока вдоль оси волны
+    const lateral=Math.abs(-(p.x-w.sx)*w.dy+(p.y-w.sy)*w.dx);
+    if(!w.hitP && w.traveled>=pProj && lateral<w.halfW){    // фронт догнал игрока
+      w.hitP=1; damagePlayer(w.dmg,'tide');
+      p.x+=w.dx*w.push; p.y+=w.dy*w.push;                   // СИЛЬНЫЙ толчок К Утопленнице (вдоль волны)
+      shakeAdd(7); A.nova(); addText(p.x,p.y-26,'≈≈≈','#9fe0bc',18);
+    }
+    // врагов на фронте сносит по ходу волны
+    const fx=w.sx+w.dx*w.traveled, fy=w.sy+w.dy*w.traveled;
+    forNear(fx,fy,210,en=>{ if(en.dead||en.boss||w.hit[en.id]) return; const eProj=(en.x-w.sx)*w.dx+(en.y-w.sy)*w.dy; if(Math.abs(eProj-w.traveled)<46){ w.hit[en.id]=1; damageEnemy(en,w.dmg*0.5,'tide'); en.kx+=w.dx*220; en.ky+=w.dy*220; } });
+    if(w.traveled>=w.len) w.dead=true;
   }
+  // лужи у тела Утопленницы: зелёная вода — урон + замедление
   let inWater=false;
   for(const z of run.tideZones){
     z.t-=dt; if(z.t<=0){ z.dead=true; continue; }
-    if(dist2(z.x,z.y,p.x,p.y)<(z.r+p.r)*(z.r+p.r)) inWater=true;
-    if(chance(0.12)&&run.parts.length<560) run.parts.push({x:z.x+rand(-z.r,z.r)*0.6,y:z.y+rand(-z.r,z.r)*0.5,vx:0,vy:-rand(4,12),life:rand(0.4,0.9),max:0.9,color:'#5a9098',size:rand(1.5,3)});
+    if(dist2(z.x,z.y,p.x,p.y)<(z.r+p.r)*(z.r+p.r)){
+      inWater=true;
+      z.tick=(z.tick||0)-dt;
+      if(z.tick<=0){ z.tick=0.4; damagePlayer(z.dmg||0,'tide'); }
+    }
+    if(chance(0.12)&&run.parts.length<560) run.parts.push({x:z.x+rand(-z.r,z.r)*0.6,y:z.y+rand(-z.r,z.r)*0.5,vx:0,vy:-rand(4,12),life:rand(0.4,0.9),max:0.9,color:'#4aa07a',size:rand(1.5,3)});
   }
   run.tideSlow=inWater;
   sweep(run.tides); sweep(run.tideZones);
 }
 BOSS_MECH.drowned=function(e,dt,dx,dy,d,sf){
-  if(e.tideT===undefined){ e.tideT=2.2; e.sumT=3.0; run.tides=run.tides||[]; run.tideZones=run.tideZones||[]; }
+  if(e.tideT===undefined){ e.tideT=2.6; e.sumT=3.0; e.poolT=0.8; run.tides=run.tides||[]; run.tideZones=run.tideZones||[]; }
   const f=e.hp/e.maxhp;
   e.phase=f>0.5?0:f>0.25?1:2;
-  // --- движение: «парит», держит дистанцию, медленно дрейфует по орбите (как Матерь роя, но плавнее) ---
+  // --- движение: «парит», держит дистанцию, дрейфует по орбите ---
   const want=300, spd=(40+e.boss*1.5);
   let mvx=0,mvy=0;
   if(d<want){ mvx=-dx/d*spd; mvy=-dy/d*spd; }
   else if(d>want+200){ mvx=dx/d*spd*0.5; mvy=dy/d*spd*0.5; }
   else { const s=(e.id&1)?1:-1; mvx=-dy/d*spd*0.5*s; mvy=dx/d*spd*0.5*s; }
-  // призрачное качание по синусоиде (плавает, а не идёт)
-  const bob=Math.sin(e.t*1.6+e.id)*spd*0.25;
-  mvx+=-dy/d*bob; mvy+=dx/d*bob;
+  const bob=Math.sin(e.t*1.6+e.id)*spd*0.25; mvx+=-dy/d*bob; mvy+=dx/d*bob;
   e.x+=mvx*sf*dt; e.y+=mvy*sf*dt;
-  // --- ПРИЛИВ: накатывающая волна (телеграф = сама расширяющаяся полоса, рисуется в drawZones) ---
-  e.tideT-=dt;
-  if(e.tideT<=0){
-    e.tideT=[3.4,2.6,2.0][e.phase];
-    const nWaves=[1,1,2][e.phase];
-    for(let k=0;k<nWaves;k++){
-      run.tides.push({
-        x:e.x, y:e.y, r:30, maxR:Math.hypot(W,H)*0.62+120,
-        spd:(360+e.phase*70)+k*40, dmg:e.dmg*0.9, hit:{}, hitP:0,
-        dropAcc:0.16, puddleLife:[3.2,3.8,4.4][e.phase]
-      });
-    }
-    addBurst(e.x,e.y,'#5a9098',16,150,0.5,3); A.nova(); shakeAdd(4);
+  // --- ЛУЖИ У ТЕЛА: зелёная вода вокруг Утопленницы (area-denial, урон) ---
+  e.poolT-=dt;
+  if(e.poolT<=0){
+    e.poolT=[1.4,1.1,0.85][e.phase];
+    if(run.tideZones.length<20){ const a=rand(0,TAU), rr=e.r+rand(8,58); run.tideZones.push({x:e.x+Math.cos(a)*rr,y:e.y+Math.sin(a)*rr,r:[54,62,70][e.phase],t:[3.0,3.4,3.8][e.phase],max:3.8,dmg:e.dmg*0.4,tick:0}); }
   }
-  // --- призыв утопленников: тематические миньоны, 0 опыта (как gnat у Матери роя) ---
+  // --- ЛАВИНА: волна-фронт сквозь игрока к боссу, толкает его К Утопленнице ---
+  e.tideT-=dt;
+  if(e.tideT<=0){ e.tideT=[3.6,2.8,2.2][e.phase]; spawnAvalanche(e,[1,1,2][e.phase]); }
+  // --- призыв утопленников: 0 опыта ---
   e.sumT-=dt;
   if(e.sumT<=0){
     e.sumT=[7,5.5,4.2][e.phase];
     let drowned=0; for(const o of run.en) if(o.type==='drowned'&&!o.dead) drowned++;
     if(drowned<24){
       const n=[3,4,5][e.phase];
-      for(let i=0;i<n;i++){
-        const a=rand(0,TAU), rr=e.r+rand(10,40);
-        const g=spawnEnemy('drowned',e.x+Math.cos(a)*rr,e.y+Math.sin(a)*rr,{noScale:true});
-        g.xp=0; g.kx=Math.cos(a)*120; g.ky=Math.sin(a)*120;
-      }
+      for(let i=0;i<n;i++){ const a=rand(0,TAU), rr=e.r+rand(10,40); const g=spawnEnemy('drowned',e.x+Math.cos(a)*rr,e.y+Math.sin(a)*rr,{noScale:true}); g.xp=0; g.kx=Math.cos(a)*120; g.ky=Math.sin(a)*120; }
       addBurst(e.x,e.y,'#274a52',10,110,0.4,2.4); A.warp();
     }
   }
-  // --- фаза 2 (33% HP): разовый ВАЛ — 3 волны веером, тяжело уворачиваться ---
+  // --- фаза 2 (33% HP): разовый ТРОЙНОЙ вал лавин ---
   if(e.phase===2 && !e.surge2){
-    e.surge2=true;
-    for(let k=0;k<3;k++){
-      run.tides.push({ x:e.x, y:e.y, r:30+k*40, maxR:Math.hypot(W,H)*0.62+120,
-        spd:340+k*60, dmg:e.dmg*0.85, hit:{}, hitP:0, dropAcc:0.16, puddleLife:4.6 });
-    }
+    e.surge2=true; spawnAvalanche(e,3);
     addBurst(e.x,e.y,'#a0ffe0',26,200,0.6,3.2); A.roar(); shakeAdd(10);
   }
 };
 BOSS_MECH.shepherd=function(e,dt,dx,dy,d,sf){
   // --- ранняя инициализация (один раз, как у matron/maneater) ---
   if(e.crowCd===undefined){
-    e.crowCd=1.6;        // таймер залпа-линии вороньей стаи
+    e.crowCd=2.4;        // таймер залпа-линии вороньей стаи (УРЕЗАН — снаряды вторичны, Заход 8B)
     e.arcCd=4.2;         // таймер дугового веера
     e.diveCd=6.5;        // таймер пикирующего рывка
     e.callSide=1;        // резерв: чередование стороны
     e.spike2=false;      // разовый всплеск на входе в фазу 2
+    e.herdCd=4.0;        // СТАМПИД (A): таймер сгона стада
+    e.fogCd=3.0;         // ВОРОНИЙ ТУМАН (C): таймер зон-выклёвывания
+    e.driveT=0;          // фаза стампида «гнать» (после сгона)
     // e.chT/e.chAng/e.dashT/e.dvx/e.dvy/e.phase уже заданы в spawnEnemy/spawnBoss
   }
   const f=e.hp/e.maxhp;
@@ -2583,7 +2720,7 @@ BOSS_MECH.shepherd=function(e,dt,dx,dy,d,sf){
   // === ЗОВ ВОРОНЬЯ #1: ЛИНИЯ ворон-снарядов — стена поперёк курса, летит на игрока ===
   e.crowCd-=dt;
   if(e.crowCd<=0){
-    e.crowCd=[2.0,1.45,1.05][ph];               // фазы → чаще
+    e.crowCd=[3.4,2.7,2.1][ph];                 // УРЕЗАНО (Заход 8B): снаряды реже, главное — стампид/туман
     const base=Math.atan2(dy,dx);               // целимся в игрока
     const perp=base+Math.PI/2;                  // ось линии — поперёк курса
     const n=[5,7,9][ph];                         // фазы → плотнее
@@ -2603,7 +2740,7 @@ BOSS_MECH.shepherd=function(e,dt,dx,dy,d,sf){
   // === ЗОВ ВОРОНЬЯ #2: ДУГА (арка) — широкий полукруг ворон веером от пастыря ===
   e.arcCd-=dt;
   if(e.arcCd<=0){
-    e.arcCd=[5.5,4.2,3.1][ph];
+    e.arcCd=[7.2,5.8,4.6][ph];                  // УРЕЗАНО (Заход 8B)
     const base=Math.atan2(dy,dx);
     const n=[7,10,13][ph];
     const spread=1.5+ph*0.25;                    // ширина дуги (рад)
@@ -2625,6 +2762,32 @@ BOSS_MECH.shepherd=function(e,dt,dx,dy,d,sf){
     } else {
       e.diveCd=1.2;                               // занят рывком → перепроверить скоро
     }
+  }
+
+  // === A: СТАМПИД — пастырь СГОНЯЕТ уже-имеющуюся орду к себе, затем ГОНИТ её тараном на игрока ===
+  e.herdCd-=dt;
+  if(e.herdCd<=0){
+    e.herdCd=[8.5,7.0,5.5][ph]; e.driveT=0.9;   // сначала собрать (импульс к пастырю), через 0.9с — гнать
+    let herded=0;
+    for(const o of run.en){ if(o.dead||o.boss) continue; if(dist2(e.x,e.y,o.x,o.y)<720*720){ const a=Math.atan2(e.y-o.y,e.x-o.x); o.kx=Math.cos(a)*260; o.ky=Math.sin(a)*260; o._herd=1; herded++; } }
+    if(herded>0){ addText(e.x,e.y-e.r-12,'КО МНЕ','#c8b0e0',15); A.warp(); }
+  }
+  if(e.driveT>0){ e.driveT-=dt; if(e.driveT<=0){
+    let driven=0;
+    for(const o of run.en){ if(o.dead||o.boss||!o._herd) continue; o.stampT=1.4; o._herd=0; driven++; }
+    if(driven>0){ addText(e.x,e.y-e.r-12,'ВПЕРЁД!','#e0c0ff',17); A.roar(); shakeAdd(7); }
+  }}
+
+  // === C: ВОРОНИЙ ТУМАН — тёмные зоны воронья у игрока: выклёвывают (DoT) + темнят обзор ===
+  e.fogCd-=dt;
+  if(e.fogCd<=0){
+    e.fogCd=[6.5,5.0,3.8][ph];
+    const m=[1,2,2][ph];
+    for(let i=0;i<m;i++){
+      const a=rand(0,TAU), rr=rand(50,210);
+      run.crowFog.push({x:run.p.x+Math.cos(a)*rr, y:run.p.y+Math.sin(a)*rr, r:[92,110,128][ph], t:6.0, max:6.0, dmg:e.dmg*0.30, tick:0});
+    }
+    addBurst(e.x,e.y,'#15101c',12,140,0.4,2.4); A.warp();
   }
 
   // === ВХОД В ФАЗУ 2 (33% HP): разовый «вихрь воронья» — кольцо-нова + эскорт-стая ===
@@ -2850,11 +3013,33 @@ function drawTorches(){
     }
   }
 }
+function kingDecree(e){ // D: УКАЗ — лучи костяных шипов узором от короля (телеграф → удар)
+  const rays=e.phase>=2?6:4;
+  const base=Math.atan2(run.p.y-e.y,run.p.x-e.x)+rand(-0.3,0.3);
+  const per=6, step=58;
+  for(let r=0;r<rays;r++){
+    const a=base+r/rays*TAU;
+    for(let s=1;s<=per;s++){
+      run.kingSpikes.push({x:e.x+Math.cos(a)*step*s, y:e.y+Math.sin(a)*step*s, t:0.5+s*0.07, T:0.5+s*0.07, r:34, boom:false, fx:0, dmg:e.dmg*0.7});
+    }
+  }
+  addText(e.x,e.y-e.r-12,'УКАЗ КОРОЛЯ','#c0a0ff',16); A.roar(); shakeAdd(6);
+}
+function updateKingSpikes(dt){
+  if(!run.kingSpikes||!run.kingSpikes.length) return;
+  if(!(run.bossRef&&!run.bossRef.dead&&run.bossRef.bkind==='deadking')){ run.kingSpikes.length=0; return; } // король мёртв → шипы гаснут (фикс ревью 8B)
+  const p=run.p;
+  for(const k of run.kingSpikes){
+    if(!k.boom){ k.t-=dt; if(k.t<=0){ k.boom=true; k.fx=0.35; if(dist2(k.x,k.y,p.x,p.y)<(k.r+p.r)*(k.r+p.r)) damagePlayer(k.dmg,'spike'); addBurst(k.x,k.y,'#d8d0bc',8,120,0.4,2.4); } }
+    else { k.fx-=dt; if(k.fx<=0) k.dead=true; }
+  }
+  sweep(run.kingSpikes);
+}
 BOSS_MECH.deadking=function(e,dt,dx,dy,d,sf){
-  if(e._kInit===undefined){ e._kInit=1; e.invuln=true; e.a1=1.6; e.mortalT=0; e.salvoN=0; }
+  if(e._kInit===undefined){ e._kInit=1; e.invuln=true; e.a1=1.6; e.mortalT=0; e.salvoN=0; e.darkCd=10.0; e.darkOn=0; e.decreeCd=5.0; e.phoenixDone=false; }
   const f=e.hp/e.maxhp;
   e.phase=f>0.5?0:f>0.25?1:2;
-  // --- ТОРЧ-СИСТЕМА + ворота смертности (хелпер в newCodeOutsideMech) ---
+  // --- ТОРЧ-СИСТЕМА + ворота смертности ---
   const allLit=deadkingTorches(e,dt);
   if(allLit && e.mortalT<=0 && e.invuln){
     e.invuln=false; e.mortalT=6.0;                 // окно уязвимости
@@ -2866,36 +3051,38 @@ BOSS_MECH.deadking=function(e,dt,dx,dy,d,sf){
     e.mortalT-=dt;
     if(e.mortalT<=0){ e.invuln=true; e.mortalT=0; for(const tc of run.torches){ tc.lit=false; tc.t=0; } addBurst(e.x,e.y,'#6a2030',24,180,0.5,3); A.warp(); }
   }
-  // --- движение дуэлянта: телеграф рывка → рывок → агрессивная погоня ---
-  const aggr=[1,1.18,1.4][e.phase];
-  if(e.chT>0){                                      // красная линия рисуется авто-рендером (e.boss&&e.chT>0)
-    e.chT-=dt;
-    if(e.chT<=0){ e.dashT=0.55; const ds=640*aggr; e.dvx=Math.cos(e.chAng)*ds; e.dvy=Math.sin(e.chAng)*ds; A.roar(); shakeAdd(5); }
-  } else if(e.dashT>0){
-    e.dashT-=dt; e.x+=e.dvx*sf*dt; e.y+=e.dvy*sf*dt;
-  } else {
-    const catchUp=clamp(d/440,1,3.0);
-    const spd=([70,86,104][e.phase])*sf*catchUp;
-    e.x+=dx/d*spd*dt; e.y+=dy/d*spd*dt;
+  // --- C: КОСТЯНОЙ ФЕНИКС (≤20% HP, разово): рассыпается в кости → СНОВА неуязвим, факелы гаснут, зажги заново ---
+  if(!e.phoenixDone && f<=0.2){
+    e.phoenixDone=true; e.invuln=true; e.mortalT=0;
+    for(const tc of run.torches){ tc.lit=false; tc.t=0; }
+    e.darkOn=Math.max(e.darkOn,1.8);               // вспышка тьмы при восстании
+    addBurst(e.x,e.y,'#e8e0d0',46,300,0.8,3.8); addBurst(e.x,e.y,'#6a2030',26,200,0.6,3); A.roar(); shakeAdd(16);
+    showBanner('КОРОЛЬ ВОССТАЁТ ИЗ КОСТЕЙ','зажги факелы СНОВА!',2600);
   }
-  // --- дальний бой: прицельный веер ИЛИ телеграф рывка; с фазы 1 каждый 3-й залп = кольцевая нова ---
+  // --- B: ТЬМА — король гасит мир (виден лишь круг вокруг героя + горящие факелы) ---
+  e.darkCd-=dt;
+  if(e.darkCd<=0 && e.darkOn<=0){ e.darkCd=[14,12,10][e.phase]; e.darkOn=[3.0,3.6,4.2][e.phase]; A.warp(); showBanner('ТЬМА','король гасит свет',1400); }
+  if(e.darkOn>0){ e.darkOn-=dt; run.kingDark=Math.min(1,(run.kingDark||0)+dt*2.2); }
+  else run.kingDark=Math.max(0,(run.kingDark||0)-dt*2.2);
+  // --- движение дуэлянта: ТОЛЬКО погоня шагом (типичный дэш с красной подсветкой УБРАН, Заход 8B) ---
+  { const catchUp=clamp(d/440,1,3.0); const spd=([70,86,104][e.phase])*sf*catchUp; e.x+=dx/d*spd*dt; e.y+=dy/d*spd*dt; }
+  // --- D: УКАЗ КОРОЛЯ — костяные шипы узором по полу ---
+  e.decreeCd-=dt;
+  if(e.decreeCd<=0){ e.decreeCd=[7.0,5.6,4.4][e.phase]; kingDecree(e); }
+  // --- дальний бой: прицельный веер; с фазы 1 каждый 3-й залп = кольцевая нова ---
   e.a1-=dt;
   if(e.a1<=0){
     e.a1=[2.2,1.7,1.3][e.phase];
-    if(d>150 && chance(0.42)){
-      e.chT=0.7-e.phase*0.1; e.chAng=Math.atan2(dy,dx);
-    } else {
-      const n=4+e.phase*2, base=Math.atan2(dy,dx), sp=210+e.phase*30;
-      for(let i=0;i<n;i++){
-        const a=base+(i-(n-1)/2)*0.17;
-        ebAdd({x:e.x,y:e.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,dmg:e.dmg*0.5,r:6,life:4,c:'#c0a0ff'});
-      }
-      e.salvoN++;
-      if(e.phase>=1 && e.salvoN%3===0){
-        const off=rand(0,TAU), n2=18+e.boss;
-        for(let i=0;i<n2;i++){ const a=off+i/n2*TAU; ebAdd({x:e.x,y:e.y,vx:Math.cos(a)*160,vy:Math.sin(a)*160,dmg:e.dmg*0.4,r:5,life:4.2,c:'#9060d0'}); }
-        A.nova();
-      }
+    const n=4+e.phase*2, base=Math.atan2(dy,dx), sp=210+e.phase*30;
+    for(let i=0;i<n;i++){
+      const a=base+(i-(n-1)/2)*0.17;
+      ebAdd({x:e.x,y:e.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,dmg:e.dmg*0.5,r:6,life:4,c:'#c0a0ff'});
+    }
+    e.salvoN++;
+    if(e.phase>=1 && e.salvoN%3===0){
+      const off=rand(0,TAU), n2=18+e.boss;
+      for(let i=0;i<n2;i++){ const a=off+i/n2*TAU; ebAdd({x:e.x,y:e.y,vx:Math.cos(a)*160,vy:Math.sin(a)*160,dmg:e.dmg*0.4,r:5,life:4.2,c:'#9060d0'}); }
+      A.nova();
     }
   }
 };
@@ -3394,12 +3581,14 @@ function update(dt){
   if(state!=='playing') return;
   updateGems(dt);
   updateZones(dt);
-  updateFlayPools(dt); updateTides(dt);
+  updateFlayPools(dt); updateTides(dt); updateCrowFog(dt); updateKingSpikes(dt);
   if(state!=='playing') return;
   updateFxArr(dt);
   director(dt);
   sweep(run.en);sweep(run.pb);sweep(run.eb);sweep(run.gems);sweep(run.parts);sweep(run.texts);sweep(run.fx);
   shake=Math.max(0,shake-shake*6*dt-2*dt);
+  run.noHitT+=dt; if(run.noHitT>run.noHitMax) run.noHitMax=run.noHitT; // «без царапины» (8C)
+  run.achCheckT-=dt; if(run.achCheckT<=0){ run.achCheckT=1.0; checkAchievementsLive(); } // live-разблокировка ачивок в бою (8C)
   refreshHud();
 }
 function refreshHud(){
@@ -3473,26 +3662,60 @@ function drawGround(px,py){
 }
 function drawZones(){
   // --- зоны боссов #3-8 (под ордой) ---
-  for(const q of run.flayPools){
-    const al=clamp(q.t/Math.min(q.max,0.8),0,1)*0.9;
-    ctx.globalAlpha=al; ctx.fillStyle='rgba(90,150,40,0.30)';
-    ctx.beginPath();ctx.ellipse(q.x,q.y,q.r,q.r*0.78,0,0,TAU);ctx.fill();
-    ctx.strokeStyle='rgba(140,200,60,0.5)';ctx.lineWidth=2;
-    ctx.beginPath();ctx.ellipse(q.x,q.y,q.r,q.r*0.78,0,0,TAU);ctx.stroke();
+  for(const q of run.flayPools){ // ЖИДКИЕ неровные лужи (Заход 8B): волнистый блоб, не круг
+    const al=clamp(q.t/Math.min(q.max,0.8),0,1)*0.9, sd=q.seed||0;
+    ctx.globalAlpha=al;
+    const blob=(rm)=>{ ctx.beginPath();
+      for(let i=0;i<=18;i++){ const a=i/18*TAU;
+        const w=1+0.26*Math.sin(a*3+sd*40)+0.16*Math.sin(a*5-sd*23)+0.09*Math.sin(a*7+sd*11);
+        const rr=q.r*rm*w; ctx.lineTo(q.x+Math.cos(a)*rr, q.y+Math.sin(a)*rr*0.74);
+      } ctx.closePath(); };
+    blob(1); ctx.fillStyle='rgba(74,120,30,0.34)'; ctx.fill();
+    blob(0.6); ctx.fillStyle='rgba(120,180,50,0.32)'; ctx.fill();
+    ctx.strokeStyle='rgba(150,210,70,'+(0.5*al).toFixed(2)+')'; ctx.lineWidth=2; blob(1); ctx.stroke();
     ctx.globalAlpha=1;
   }
-  for(const z of run.tideZones){
+  for(const s of run.flaySlimes){ // телеграф приземления + летящий комок
+    ctx.strokeStyle='rgba(140,200,60,0.4)'; ctx.lineWidth=2;
+    ctx.beginPath();ctx.ellipse(s.tx,s.ty,s.r*0.8,s.r*0.58,0,0,TAU);ctx.stroke();
+    ctx.fillStyle='rgba(120,190,50,0.95)'; ctx.beginPath();ctx.ellipse(s.x,s.y,9,8,0,0,TAU);ctx.fill();
+    ctx.fillStyle='rgba(70,120,30,0.95)'; ctx.beginPath();ctx.ellipse(s.x,s.y+2,5,4,0,0,TAU);ctx.fill();
+  }
+  for(const z of run.crowFog){ // вороний туман: тёмная клякса (темнит обзор) + вьющиеся вороны
     const al=clamp(z.t/z.max,0,1);
-    ctx.globalAlpha=0.5*al; ctx.fillStyle='rgba(60,110,116,0.5)';
-    ctx.beginPath();ctx.ellipse(z.x,z.y,z.r,z.r*0.7,0,0,TAU);ctx.fill();
+    ctx.globalAlpha=0.52*al; ctx.fillStyle='rgba(10,7,16,0.85)';
+    ctx.beginPath();ctx.ellipse(z.x,z.y,z.r,z.r*0.8,0,0,TAU);ctx.fill();
+    ctx.globalAlpha=0.7*al; ctx.fillStyle='#070510';
+    for(let k=0;k<6;k++){ const a=z.t*2.4+k*1.05, rr=z.r*(0.4+0.18*Math.sin(a*1.7)); ctx.fillRect(Math.round(z.x+Math.cos(a)*rr-2),Math.round(z.y+Math.sin(a)*rr*0.8-1),4,2); }
     ctx.globalAlpha=1;
   }
-  for(const w of run.tides){
-    const al=clamp(1-w.r/w.maxR,0,1);
-    ctx.strokeStyle='rgba(160,255,224,'+(0.45*al+0.2)+')'; ctx.lineWidth=6;
-    ctx.beginPath();ctx.arc(w.x,w.y,w.r,0,TAU);ctx.stroke();
-    ctx.strokeStyle='rgba(90,144,152,'+(0.35*al)+')'; ctx.lineWidth=2;
-    ctx.beginPath();ctx.arc(w.x,w.y,w.r-7,0,TAU);ctx.stroke();
+  for(const k of run.kingSpikes){ // указ короля: телеграф трещины → костяной шип вверх
+    if(!k.boom){ const g=1-k.t/k.T;
+      ctx.fillStyle='rgba(20,12,30,'+(0.14+g*0.24).toFixed(2)+')'; ctx.beginPath();ctx.ellipse(k.x,k.y,k.r,k.r*0.4,0,0,TAU);ctx.fill();
+      ctx.strokeStyle='rgba(180,140,255,'+(0.25+g*0.5).toFixed(2)+')'; ctx.lineWidth=2; ctx.beginPath();ctx.ellipse(k.x,k.y,k.r*(0.4+g*0.5),k.r*0.4*(0.4+g*0.5),0,0,TAU);ctx.stroke();
+    } else { const a=clamp(k.fx/0.35,0,1);
+      ctx.fillStyle='rgba(220,212,190,'+(0.85*a+0.1).toFixed(2)+')'; ctx.beginPath();ctx.moveTo(k.x-7,k.y+4);ctx.lineTo(k.x,k.y-26*a-6);ctx.lineTo(k.x+7,k.y+4);ctx.closePath();ctx.fill();
+      ctx.fillStyle='rgba(150,140,120,'+(0.7*a).toFixed(2)+')'; ctx.beginPath();ctx.moveTo(k.x-3,k.y+2);ctx.lineTo(k.x,k.y-18*a-4);ctx.lineTo(k.x+3,k.y+2);ctx.closePath();ctx.fill();
+    }
+  }
+  for(const z of run.tideZones){ // зелёная вода у тела Утопленницы
+    const al=clamp(z.t/z.max,0,1);
+    ctx.globalAlpha=0.5*al; ctx.fillStyle='rgba(50,150,108,0.5)';
+    ctx.beginPath();ctx.ellipse(z.x,z.y,z.r,z.r*0.72,0,0,TAU);ctx.fill();
+    ctx.globalAlpha=0.4*al; ctx.fillStyle='rgba(24,90,70,0.5)';
+    ctx.beginPath();ctx.ellipse(z.x,z.y+z.r*0.06,z.r*0.6,z.r*0.42,0,0,TAU);ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  for(const w of run.tides){ // ЛАВИНА: фронт зелёной пиксель-воды (полоса перпендикулярно ходу)
+    const fx=w.sx+w.dx*w.traveled, fy=w.sy+w.dy*w.traveled, ox=-w.dy, oy=w.dx, half=Math.min(w.halfW,720);
+    const wob=t=>Math.sin(t*0.05+w.traveled*0.06)*9;
+    const band=(off,col,lw)=>{ ctx.strokeStyle=col; ctx.lineWidth=lw; ctx.beginPath();
+      for(let t=-half;t<=half;t+=26){ const ww=wob(t)+off, x=fx+ox*t+w.dx*ww, y=fy+oy*t+w.dy*ww; if(t===-half) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.stroke(); };
+    band(8,'rgba(40,120,90,0.5)',12);
+    band(0,'rgba(90,200,150,0.6)',8);
+    band(-9,'rgba(170,245,205,0.55)',3);
+    ctx.fillStyle='rgba(210,255,232,0.5)';
+    for(let t=-half;t<half;t+=64){ const ww=wob(t)-12; ctx.fillRect(Math.round(fx+ox*t+w.dx*ww),Math.round(fy+oy*t+w.dy*ww),3,3); }
   }
   { const ge=run.bossRef;
     if(ge&&!ge.dead&&ge.graves) for(const g of ge.graves){
@@ -4376,6 +4599,19 @@ function render(){
     ctx.fillStyle=tg; ctx.fillRect(0,0,W,H);
     ctx.globalCompositeOperation='source-over';
   }
+  // ТЬМА КОРОЛЯ: гасит мир, виден лишь круг вокруг героя + горящие факелы (Заход 8B)
+  if(run){
+    const kingAlive=run.bossRef&&!run.bossRef.dead&&run.bossRef.bkind==='deadking';
+    if(!kingAlive && run.kingDark>0) run.kingDark=Math.max(0,run.kingDark-0.06); // король мёртв → тьма спадает
+    const kd=run.kingDark||0;
+    if(kd>0.01){
+      const dr=165;
+      const g=ctx.createRadialGradient(W/2,H/2,dr*0.5,W/2,H/2,dr*2.5);
+      g.addColorStop(0,'rgba(3,2,7,0)'); g.addColorStop(1,'rgba(3,2,7,'+(0.93*kd).toFixed(2)+')');
+      ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+      if(run.torches) for(const tc of run.torches){ if(!tc.lit) continue; const txs=tc.x-px+W/2, tys=tc.y-6-py+H/2; const tgl=ctx.createRadialGradient(txs,tys,2,txs,tys,52); tgl.addColorStop(0,'rgba(255,200,90,'+(0.8*kd).toFixed(2)+')'); tgl.addColorStop(1,'rgba(255,150,40,0)'); ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle=tgl; ctx.fillRect(txs-56,tys-56,112,112); ctx.restore(); }
+    }
+  }
   if(!run) drawMenuAmbient();
   ctx.imageSmoothingEnabled=true; // виньетка — мягкий градиент
   ctx.globalAlpha=0.95;
@@ -4647,6 +4883,15 @@ function setState(s){
   if(run&&(s==='playing'||s==='paused'||s==='levelup')) refreshHud();
   if(A.ctx) A.applyVol();
 }
+function achPop(a){ // всплывающая карточка достижения В БОЮ (8C)
+  const box=$('achPops'); if(!box) return;
+  const el=document.createElement('div'); el.className='achpop';
+  el.innerHTML='<img src="'+achIcoURL(a.icon)+'"><div class="apx"><div class="apt">ДОСТИЖЕНИЕ</div><div class="apn">'+a.name+'</div></div>';
+  box.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>{ if(el.parentNode) el.remove(); },420); }, 3600);
+  while(box.children.length>4) box.firstChild.remove();
+}
 let bannerTO=null;
 function showBanner(big,small,dur){
   $('bannerBig').textContent=big||'';
@@ -4694,8 +4939,9 @@ function startRun(){
 function quitToMenu(){
   if(run){
     const s=run.stats;
-    meta.gold+=Math.max(0,Math.round(run.goldBonus*run.goldMul)); // золото = ТОЛЬКО собранные монеты (Заход 6)
-    saveMeta();
+    const _e=Math.max(0,Math.round(run.goldBonus*run.goldMul)); // золото = ТОЛЬКО собранные монеты (Заход 6)
+    meta.gold+=_e; meta.stats.goldTotal=(meta.stats.goldTotal||0)+_e;
+    saveMeta(); checkAchievements(); // скан после прибавки золота (фикс ревью 8C)
   }
   run=null;
   grid.clear();
@@ -4720,7 +4966,7 @@ function buildHeroes(){
       '<div class="mname">'+h.name+'</div><div class="mdesc">'+h.desc+'</div><div class="mcost">'+status+'</div>';
     c.onclick=()=>{
       if(owned){ meta.hero=h.id; saveMeta(); A.buy(); if(launching) setState('pickLoc'); else buildHeroes(); return; }
-      if(meta.gold>=h.cost){ meta.gold-=h.cost; meta.heroes[h.id]=true; meta.hero=h.id; saveMeta(); A.buy(); if(launching) setState('pickLoc'); else buildHeroes(); }
+      if(meta.gold>=h.cost){ meta.gold-=h.cost; meta.heroes[h.id]=true; meta.hero=h.id; saveMeta(); checkAchievements(); A.buy(); if(launching) setState('pickLoc'); else buildHeroes(); } // скан: ачивка «Орден» (фикс ревью 8C)
       else A.deny();
     };
     g.appendChild(c);
@@ -4756,10 +5002,18 @@ function buildBestiary(){
 function buildStats(){
   const st=meta.stats, T=s=>fmtTime(s||0);
   const al=$('achList'); al.innerHTML='';
-  for(const a of ACHIEVEMENTS){
-    const done=!!meta.ach[a.id];
+  // прогресс + сортировка по % заполнения (готовые/почти готовые вверху), при равенстве — открытые выше
+  const list=ACHIEVEMENTS.map(a=>{ const pr=achProg(a); return {a,pr,done:!!meta.ach[a.id]}; });
+  list.sort((x,y)=> (y.done-x.done) || (y.pr.pct-x.pr.pct));
+  for(const it of list){
+    const a=it.a, pr=it.pr, done=it.done;
+    const pctTxt=done?'✓':Math.floor(pr.pct*100)+'%';
+    const valTxt=done?'':fmtNum(pr.cur)+' / '+fmtNum(pr.goal);
     const row=document.createElement('div'); row.className='ach'+(done?' done':'');
-    row.innerHTML='<span class="an">'+(done?'✓ ':'')+a.name+' <span class="ad">'+a.desc+'</span></span><span class="ad">◆'+a.gold+'</span>';
+    row.innerHTML='<img class="aico" src="'+achIcoURL(a.icon)+'">'
+      +'<div class="acol"><div class="atop"><span class="an">'+a.name+'</span><span class="apct">'+pctTxt+'</span></div>'
+      +'<div class="ad">'+a.desc+(valTxt?' · <span class="aval">'+valTxt+'</span>':'')+'</div>'
+      +'<div class="abar"><div class="afill" style="width:'+Math.floor(pr.pct*100)+'%"></div></div></div>';
     al.appendChild(row);
   }
   const rows=[['Ночей пережито',st.runs],['Побед',st.wins],['Всего убийств',st.kills],
@@ -4789,7 +5043,7 @@ function buildShop(){
       if(meta.gold<cost){A.deny();return;}
       meta.gold-=cost;
       meta.up[d.id]=lv+1;
-      saveMeta(); A.buy(); buildShop();
+      saveMeta(); checkAchievements(); A.buy(); buildShop(); // скан: ачивка «Скупщик» (фикс ревью 8C)
     };
     g.appendChild(c);
   }
