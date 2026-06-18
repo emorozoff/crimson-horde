@@ -234,6 +234,12 @@ h1,h2,.serif{font-family:var(--pix);}
 .card .cname{font-family:var(--ui);font-weight:700;font-size:19px;color:#fff;margin-bottom:8px;}
 .card .cdesc{font-size:13px;color:#b8a8b2;line-height:1.45;}
 .card .ckey{position:absolute;top:10px;right:12px;color:#5a4a55;font-size:13px;}
+/* синергия-чипы на карточке оружия (пиксельные): с чем сливается/во что эволюционирует (Заход 9) */
+.card .csyn{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;}
+.card .csynchip{display:inline-flex;align-items:center;gap:4px;font-family:var(--pix);font-size:12px;letter-spacing:.5px;padding:3px 6px 3px 4px;border:2px solid #2a1a30;background:#150d18;image-rendering:pixelated;color:#bdb2c8;}
+.card .csynchip img{width:18px;height:18px;image-rendering:pixelated;}
+.card .csynchip.fuse{border-color:#5a3a78;color:#d3b8f0;}
+.card .csynchip.evo{border-color:#6a5410;color:var(--gold);}
 #lvlActions{display:flex;gap:10px;justify-content:center;margin-top:6px;flex-wrap:wrap;}
 .lvlbtn{pointer-events:auto;cursor:pointer;border:1px solid #5a2030;background:linear-gradient(180deg,#241019,#160a10);color:#cbb;font-size:13px;letter-spacing:1px;padding:8px 16px;border-radius:6px;transition:.12s;font-family:var(--ui);}
 .lvlbtn:hover{border-color:var(--gold);color:#fff;}
@@ -292,7 +298,7 @@ h1,h2,.serif{font-family:var(--pix);}
 /* ---------- пиксельный курсор (меню); в игре прячется ---------- */
 body{cursor:var(--cur,auto);}
 .locchip,.mcard,.toggle,.lvlbtn,.dvb,#verCorner,#btnFull,#btnPauseTouch,.ach,.ichip{cursor:var(--cur,pointer);}
-body.ingame,body.ingame *{cursor:none!important;}
+body.ingame.idle,body.ingame.idle *{cursor:none!important;} /* курсор прячется только при покое 1с (Заход 9) */
 </style>
 </head>
 <body>
@@ -435,7 +441,7 @@ body.ingame,body.ingame *{cursor:none!important;}
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.74';
+const VERSION='0.75';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -1447,15 +1453,15 @@ function upgAvail(d){
 }
 // эволюции: оружие на макс + предмет-партнёр → супер-версия (гарантированно предлагается)
 const EVOS=[
-  {id:'bolt',  name:'Серебряный залп', req:r=>r.weapons.bolt>=6&&(r.taken.crit||0)>=3,   desc:'АРБАЛЕТ превзойдён: широкий веер серебряных болтов навылет'},
-  {id:'orbit', name:'Нимб',            req:r=>r.weapons.orbit>=5&&(r.taken.haste||0)>=3,  desc:'КЛИНКИ сливаются в сияющий нимб — больше, шире, быстрее'},
-  {id:'chain', name:'Гнев небес',      req:r=>r.weapons.chain>=5&&(r.taken.might||0)>=3,  desc:'МОЛНИЯ зовёт удары с небес по площади в каждой точке'},
-  {id:'aura',  name:'Святилище',       req:r=>r.weapons.aura>=5&&(r.taken.armor||0)>=3,   desc:'КАДИЛО разгорается Святилищем: шире, сильнее, лечит тебя'},
-  {id:'scythe',name:'Распятие',        req:r=>r.weapons.scythe>=5&&(r.taken.hunger||0)>=3,desc:'КРЕСТ становится огромным Распятием — дольше летит, сильнее рубит'},
-  {id:'mortar',name:'Кара огнём',      req:r=>r.weapons.mortar>=5&&(r.taken.regen||0)>=3, desc:'СВЯТАЯ ВОДА превращается в частый огненный ливень с большими лужами'},
-  {id:'bell',  name:'Благовест',       req:r=>r.weapons.bell>=5&&(r.taken.haste||0)>=3,   desc:'КОЛОКОЛ гремит чаще и шире — непрерывный благовест'},
-  {id:'lantern',name:'Маяк',           req:r=>r.weapons.lantern>=5&&(r.taken.might||0)>=3,desc:'ФОНАРЬ вспыхивает МАЯКОМ — жгучий свет на 360° вокруг'},
-  {id:'sword', name:'Рой клинков',     req:r=>r.weapons.sword>=5&&(r.taken.haste||0)>=2,  desc:'МЕЧ ВЕРЫ разделяется на РОЙ клинков — больше мечей, шире радиус, сильнее'},
+  {id:'bolt',  name:'Серебряный залп', partner:'crit',   desc:'АРБАЛЕТ превзойдён: широкий веер серебряных болтов навылет', req:r=>r.weapons.bolt>=6&&(r.taken.crit||0)>=3},
+  {id:'orbit', name:'Нимб',            partner:'haste',  desc:'КЛИНКИ сливаются в сияющий нимб — больше, шире, быстрее', req:r=>r.weapons.orbit>=5&&(r.taken.haste||0)>=3},
+  {id:'chain', name:'Гнев небес',      partner:'might',  desc:'МОЛНИЯ зовёт удары с небес по площади в каждой точке', req:r=>r.weapons.chain>=5&&(r.taken.might||0)>=3},
+  {id:'aura',  name:'Святилище',       partner:'armor',  desc:'КАДИЛО разгорается Святилищем: шире, сильнее, лечит тебя', req:r=>r.weapons.aura>=5&&(r.taken.armor||0)>=3},
+  {id:'scythe',name:'Распятие',        partner:'hunger', desc:'КРЕСТ становится огромным Распятием — дольше летит, сильнее рубит', req:r=>r.weapons.scythe>=5&&(r.taken.hunger||0)>=3},
+  {id:'mortar',name:'Кара огнём',      partner:'regen',  desc:'СВЯТАЯ ВОДА превращается в частый огненный ливень с большими лужами', req:r=>r.weapons.mortar>=5&&(r.taken.regen||0)>=3},
+  {id:'bell',  name:'Благовест',       partner:'haste',  desc:'КОЛОКОЛ гремит чаще и шире — непрерывный благовест', req:r=>r.weapons.bell>=5&&(r.taken.haste||0)>=3},
+  {id:'lantern',name:'Маяк',           partner:'might',  desc:'ФОНАРЬ вспыхивает МАЯКОМ — жгучий свет на 360° вокруг', req:r=>r.weapons.lantern>=5&&(r.taken.might||0)>=3},
+  {id:'sword', name:'Рой клинков',     partner:'haste',  desc:'МЕЧ ВЕРЫ разделяется на РОЙ клинков — больше мечей, шире радиус, сильнее', req:r=>r.weapons.sword>=5&&(r.taken.haste||0)>=2},
 ];
 // СЛИЯНИЯ ОРУЖИЯ: оба оружия пары на lv5 → выпадает карта-слияние → оба помечаются фиолетовым (или сливаются в одно)
 const FUSIONS=[
@@ -1467,6 +1473,13 @@ const FUSIONS=[
 ];
 function fusionReq(f){ return run.weapons[f.pair[0]]>=5 && run.weapons[f.pair[1]]>=5; }
 function isFused(wid){ for(const f of FUSIONS){ if(run.fused[f.id]&&(f.pair[0]===wid||f.pair[1]===wid)) return true; } return false; }
+// синергии оружия для карточки выбора: партнёр по слиянию (оружие) + по эволюции (пассивка) (Заход 9)
+function weaponSynergies(wid){
+  const out=[];
+  for(const f of FUSIONS){ if(f.pair[0]===wid||f.pair[1]===wid) out.push({kind:'fuse', ico:(f.pair[0]===wid?f.pair[1]:f.pair[0]), name:f.name}); }
+  const e=EVOS.find(x=>x.id===wid); if(e&&e.partner) out.push({kind:'evo', ico:e.partner, name:e.name});
+  return out;
+}
 function rollUpgrades(){
   const evos=EVOS.filter(e=>!run.evo[e.id]&&e.req(run)).map(e=>({kind:'evo',id:e.id,name:e.name,desc:()=>e.desc}));
   const fus=FUSIONS.filter(f=>!run.fused[f.id]&&fusionReq(f)).map(f=>({kind:'fusion',id:f.id,name:f.name,desc:()=>f.desc}));
@@ -1530,8 +1543,10 @@ function renderChoices(title){
       :d.kind==='syn'?'<span class="badge syn">СИНЕРГИЯ</span>'
       :`<span class="badge">УР. ${lv} → ${lv+1}</span>`;
     const icoId=d.kind==='fusion'?((FUSIONS.find(f=>f.id===d.id)||{pair:['syn']}).pair[0]):(d.kind==='syn'?'syn':d.id);
+    let syn='';
+    if(d.kind==='w'){ const ss=weaponSynergies(d.id); if(ss.length) syn='<div class="csyn">'+ss.map(s=>`<span class="csynchip ${s.kind}"><img src="${icoURL(s.ico)}">${s.kind==='fuse'?'⮂':'★'} ${s.name}</span>`).join('')+'</div>'; }
     const el=document.createElement('div'); el.className='card'+(d.kind==='evo'?' evocard':'')+(d.kind==='fusion'?' fusioncard':'')+(run.banishMode?' banish':'');
-    el.innerHTML=`<img class="cardico" src="${icoURL(icoId)}">${badge}<div class="ckey">${i+1}</div><div class="cname">${d.name}</div><div class="cdesc">${d.desc(lv)}</div>`;
+    el.innerHTML=`<img class="cardico" src="${icoURL(icoId)}">${badge}<div class="ckey">${i+1}</div><div class="cname">${d.name}</div><div class="cdesc">${d.desc(lv)}</div>${syn}`;
     el.onclick=()=>cardClick(i);
     c.appendChild(el);
   });
@@ -1754,14 +1769,26 @@ function winGame(){
   buildDeath(true);
   setState('dead');
 }
+// ===== СЛОЖНОСТЬ — ЕДИНЫЙ РЕГУЛЯТОР (крути ТОЛЬКО ЗДЕСЬ) =====
+// m = минуты забега. mul = общий множитель (1.0 база; 1.2 = +20% к HP и урону врагов/боссов).
+// Хочешь «легко в начале, ад к 10-й минуте» — переформируй кривые hp/dmg (это функции от m).
+// Густоту спавна тут НЕ трогаем (она в diffNow и так очень плотная — по просьбе владельца).
+const DIFFICULTY={
+  mul: 1.2,                                  // общий множитель сложности (+20%)
+  hp:  m => 1 + 0.55*m + 0.17*m*m,           // кривая HP врага по времени
+  dmg: m => 1 + 0.22*m,                      // кривая урона врага по времени
+  spd: m => 1 + Math.min(0.4, m*0.045),      // кривая скорости врага (mul НЕ применяется — игра и так ускорена)
+  bossHp:  m => 1 + m*0.10,                  // кривая HP боссов
+  bossDmg: m => 1 + m*0.10,                  // кривая урона боссов
+};
 function spawnEnemy(type,x,y,o={}){
   const b=ETYPES[type], m=run.time/60;
-  const hpMul=o.noScale?1:1+0.55*m+0.17*m*m;
-  const dmgMul=o.noScale?1:1+0.22*m;
+  const hpMul=o.noScale?1:DIFFICULTY.hp(m)*DIFFICULTY.mul;
+  const dmgMul=o.noScale?1:DIFFICULTY.dmg(m)*DIFFICULTY.mul;
   const e={
     id:eid++, type, behav:b.behav||'chase', x, y, r:b.r,
     hp:Math.round(b.hp*hpMul), maxhp:Math.round(b.hp*hpMul),
-    spd:b.spd*(o.noScale?1:1+Math.min(0.4,m*0.045))*rand(0.9,1.1),
+    spd:b.spd*(o.noScale?1:DIFFICULTY.spd(m))*rand(0.9,1.1),
     dmg:b.dmg*dmgMul,
     xp:Math.max(1,Math.round(b.xp*(1+m*0.15))),
     t:rand(0,10), hitT:0, flash:0, slowT:0, slowF:1, orbT:0,
@@ -3170,8 +3197,8 @@ function spawnBoss(idx, isFinal){
   const tier=idx+1;
   e.boss=tier; e.bkind=def.kind; e.name=def.name;
   const m=run.time/60;
-  e.maxhp=e.hp=Math.round(1100*Math.pow(tier,1.45)*(1+m*0.10));
-  e.r=42; e.spd=42; e.dmg=(15+7*tier)*(1+m*0.1);
+  e.maxhp=e.hp=Math.round(1100*Math.pow(tier,1.45)*DIFFICULTY.bossHp(m)*DIFFICULTY.mul);
+  e.r=42; e.spd=42; e.dmg=(15+7*tier)*DIFFICULTY.bossDmg(m)*DIFFICULTY.mul;
   e.xp=Math.round(110*tier*(1+m*0.12));
   e.sumNext=true; e.a1=2.5; e.a2=6;
   if(isFinal){ e.final=true; e.maxhp=e.hp=Math.round(e.maxhp*1.6); e.r=50; e.dmg*=1.15; }
@@ -4793,6 +4820,7 @@ const MUSIC={
 };
 
 // ============================== MAIN LOOP ==============================
+const GAMESPEED=1.5; // постоянное ускорение ВСЕЙ игры (как таймскейл дев-панели). Крути ЗДЕСЬ. (Заход 9)
 let lastTS=0;
 const fpsBuf=new Float32Array(90); let fpsI=0; let _fps=60; let _lowperf=false; // авто-перф при просадке FPS (моб.) // _fps — бегущий FPS для адаптивных каппов (Заход 7)
 // ============================== DEV-ПАНЕЛЬ (секретный жест: 5 тапов по версии) ==============================
@@ -4855,13 +4883,20 @@ function loop(ts){
   fpsBuf[fpsI++%90]=dt;
   if((fpsI&7)===0){ let _s=0,_c=0; for(const v of fpsBuf){ if(v>0){ _s+=v; _c++; } } _fps=_c&&_s>0?_c/_s:60; _lowperf=_fps<38?true:(_fps>52?false:_lowperf); } // адаптивный FPS + авто-перф (моб.)
   if(hitStop>0) hitStop-=dt;
-  if(state==='playing'&&run) update(Math.min(dt,0.05)*(hitStop>0?0.12:1)*devTimescale);
+  if(state==='playing'&&run) update(Math.min(dt,0.05/GAMESPEED)*(hitStop>0?0.12:1)*GAMESPEED*devTimescale); // кламп ДО ×1.5 → эфф. макс-шаг 0.05 (анти-туннель на низком FPS; 1.5× сохраняется до 30fps)
   render();
   A.intensity=(state==='playing'&&run)
     ? clamp(0.22+run.time/420*0.55+run.en.length/300*0.2+(run.bossRef&&!run.bossRef.dead?0.15:0),0,1)
     : 0.12;
   MUSIC.tick(dt);
 }
+// курсор: прячется через 1с без движения мыши, появляется при движении (Заход 9). CSS гасит только при body.ingame.idle
+let _curIdleT=null;
+window.addEventListener('mousemove',()=>{
+  document.body.classList.remove('idle');
+  if(_curIdleT) clearTimeout(_curIdleT);
+  _curIdleT=setTimeout(()=>document.body.classList.add('idle'),1000);
+},{passive:true});
 
 // ============================== UI / SCREENS ==============================
 const SCREEN_MAP={menu:'scrMenu',shop:'scrShop',heroes:'scrHeroes',pickLoc:'scrPickLoc',stats:'scrStats',best:'scrBest',settings:'scrSettings',paused:'scrPause',levelup:'scrLevel',dead:'scrDeath'};
