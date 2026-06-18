@@ -202,22 +202,29 @@ h1,h2,.serif{font-family:var(--pix);}
   #btnPauseTouch.show{display:flex;}
 }
 @media (max-width:640px){
-  #hpbar{width:130px;}
-  /* вертикальная раскладка верха: полосы → таймер → строка ур/убийств/золото → предметы (без наезда) */
-  #timeText{top:13px;font-size:22px;}
-  #hudTL{top:46px;left:14px;transform:scale(0.84);transform-origin:top left;}
-  .hudrow{gap:12px;font-size:17px;}
-  #lvlCards{flex-direction:column;align-items:center;gap:9px;}
-  .card{width:min(84vw,300px);min-height:0;padding:10px 12px;}
-  .card .cname{font-size:16px;margin-bottom:5px;}
-  .card .cdesc{font-size:12px;}
-  .cardico{width:38px;height:38px;}
+  /* весь UI компактнее на мобиле (Заход 10) */
+  #hpbar{width:112px;}
+  #timeText{top:11px;font-size:19px;}
+  #hudTL{top:40px;left:10px;transform:scale(0.7);transform-origin:top left;}    /* HUD мельче */
+  #hudWeapons{transform:scale(0.82);transform-origin:top left;}
+  .hudrow{gap:10px;font-size:15px;}
+  #btnPauseTouch{width:40px;height:40px;top:12px;right:10px;}
+  #lvlCards{flex-direction:column;align-items:center;gap:8px;}
+  .card{width:min(82vw,290px);min-height:0;padding:9px 12px;}
+  .card .cname{font-size:15px;margin-bottom:4px;}
+  .card .cdesc{font-size:11.5px;}
+  .card .csynchip{font-size:11px;}
+  .cardico{width:34px;height:34px;}
   .locchip{width:88vw;}
-  .btn.big{font-size:20px;padding:14px 44px;}
+  .btn{font-size:18px;padding:9px 18px;}
+  .btn.big{font-size:19px;padding:12px 38px;}
   #deathGrid{font-size:13px;gap:4px 16px;}
   .deathtitle{font-size:38px;}
   #shopGrid{max-height:38vh;}
-  .title{letter-spacing:5px;}
+  /* заголовок: меньше + ровно по центру (трейлинг letter-spacing компенсирован text-indent) */
+  .title{font-size:min(60px,12vw);letter-spacing:3px;text-indent:3px;text-align:center;}
+  .titlewrap{display:block;text-align:center;}
+  .subtitle{font-size:16px;}
 }
 
 /* ---------- cards (levelup) ---------- */
@@ -269,6 +276,21 @@ h1,h2,.serif{font-family:var(--pix);}
 .mcost{font-family:var(--pix);margin-top:7px;color:var(--gold);font-size:16px;letter-spacing:1px;}
 #heroGrid .mcard{text-align:center;}
 .mcard .hico{display:block;margin:0 auto 7px;width:60px;height:72px;image-rendering:pixelated;}
+/* карточки прокачки оружия в Складе (Заход 10) */
+#shopWGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;width:min(880px,92vw);max-height:34vh;overflow-y:auto;padding:4px;}
+.wcard{display:flex;align-items:center;gap:9px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:linear-gradient(180deg,#1c1118,#120a10);cursor:pointer;transition:.12s;pointer-events:auto;}
+.wcard:hover{border-color:var(--gold);}
+.wcard.maxed{border-color:#5a4a10;opacity:.85;cursor:default;}
+.wcard .wcico{width:34px;height:34px;image-rendering:pixelated;flex:none;}
+.wcard .wccol{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
+.wcard .wctop{display:flex;justify-content:space-between;align-items:baseline;gap:6px;}
+.wcard .wcname{font-family:var(--pix);font-size:15px;color:#fff;letter-spacing:.5px;}
+.wcard .wctier{font-family:var(--pix);font-size:12px;color:var(--gold);flex:none;}
+.wcard .wcbar{height:6px;background:#0c0709;border:1px solid #2a1a22;overflow:hidden;}
+.wcard .wcfill{height:100%;background:linear-gradient(90deg,#9a7820,#e7b54a);}
+.wcard .wcdesc{font-family:var(--ui);font-size:10.5px;color:var(--dim);line-height:1.25;}
+.wcard .wccost{font-family:var(--pix);color:var(--gold);font-size:15px;flex:none;}
+.wcard.maxed .wccost{color:#7ce86a;}
 #expWrap{width:min(640px,90vw);display:flex;flex-direction:column;gap:8px;align-items:center;}
 #expArea{width:100%;height:54px;background:#0d0a10;border:1px solid #33202c;color:#9a8;font-size:11px;
   font-family:monospace;border-radius:6px;padding:6px;resize:none;pointer-events:auto;}
@@ -350,16 +372,9 @@ body.ingame.idle,body.ingame.idle *{cursor:none!important;} /* курсор пр
   <div class="hint" style="margin-top:-6px">перманентные улучшения · действуют во всех забегах</div>
   <div class="goldrow">◆ <span id="shopGold">0</span></div>
   <div id="shopGrid"></div>
-  <button class="btn" id="btnSaveToggle" style="font-size:13px;padding:8px 18px">СОХРАНЕНИЕ / ЗАГРУЗКА ⏷</button>
-  <div id="expWrap" class="hidden">
-    <div class="btnrow">
-      <button class="btn" id="btnExport" style="font-size:13px;padding:8px 18px">ЭКСПОРТ JSON</button>
-      <button class="btn" id="btnCopy" style="font-size:13px;padding:8px 18px">КОПИРОВАТЬ</button>
-      <button class="btn" id="btnImport" style="font-size:13px;padding:8px 18px">ИМПОРТ</button>
-    </div>
-    <textarea id="expArea" spellcheck="false" placeholder="Прогресс хранится в памяти сессии. Экспортируй JSON, чтобы сохранить его навсегда; вставь сюда и нажми ИМПОРТ, чтобы восстановить."></textarea>
-    <div id="impMsg"></div>
-  </div>
+  <div class="serif" style="color:var(--gold);letter-spacing:3px;font-size:15px;margin-top:10px">ПРОКАЧКА ОРУЖИЯ</div>
+  <div class="hint" style="margin-top:-4px">тир 0→50 · база ×0.5 → потолок ×2.0 урона + фирменный охват</div>
+  <div id="shopWGrid"></div>
   <button class="btn" id="btnShopBack">НАЗАД</button>
 </div>
 
@@ -402,6 +417,16 @@ body.ingame.idle,body.ingame.idle *{cursor:none!important;} /* курсор пр
     <div class="setrow"><label>СЧЁТЧИК FPS</label><button class="toggle" id="tgFps"></button></div>
     <div class="setrow" style="margin-top:16px"><label style="color:#e07088">СБРОС ПРОГРЕССА</label><button class="btn" id="btnReset" style="padding:6px 18px;font-size:18px;border-color:#7a2433;color:#e07088">×5</button></div>
   </div>
+  <button class="btn" id="btnSaveToggle" style="font-size:13px;padding:8px 18px;margin-top:10px">СОХРАНЕНИЕ / ЗАГРУЗКА ⏷</button>
+  <div id="expWrap" class="hidden">
+    <div class="btnrow">
+      <button class="btn" id="btnExport" style="font-size:13px;padding:8px 18px">ЭКСПОРТ JSON</button>
+      <button class="btn" id="btnCopy" style="font-size:13px;padding:8px 18px">КОПИРОВАТЬ</button>
+      <button class="btn" id="btnImport" style="font-size:13px;padding:8px 18px">ИМПОРТ</button>
+    </div>
+    <textarea id="expArea" spellcheck="false" placeholder="Прогресс хранится в localStorage. Экспортируй JSON для бэкапа/переноса; вставь сюда и нажми ИМПОРТ, чтобы восстановить."></textarea>
+    <div id="impMsg"></div>
+  </div>
   <button class="btn" id="btnSetBack" style="margin-top:10px">НАЗАД</button>
 </div>
 
@@ -441,7 +466,7 @@ body.ingame.idle,body.ingame.idle *{cursor:none!important;} /* курсор пр
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.75';
+const VERSION='0.76';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -672,8 +697,10 @@ const META_DEFS=[
   {id:'rev', name:'Второе сердце',  desc:'возрождение 1 раз за забег (60% HP)',  base:300, mul:3,   max:2},
 ];
 function _isTouch(){ try{ return !!(navigator.maxTouchPoints>0 || ('ontouchstart' in window)); }catch(e){ return false; } } // мобильный дефолт перф (Заход 7 моб.)
+const MOBILE=_isTouch();                 // кэш: мобильное устройство (Заход 10 — зум/меньше UI/монеты)
+const ZOOM=MOBILE?0.78:1;                // зум-аут камеры на мобиле (видно больше поля)
 function defaultMeta(){
-  return {gold:0, up:{}, best:null, loc:'grave', hero:'hunter', heroes:{hunter:true}, bestiary:{}, ach:{},
+  return {gold:0, up:{}, wcrypt:{}, best:null, loc:'grave', hero:'hunter', heroes:{hunter:true}, bestiary:{}, ach:{},
     stats:{runs:0,kills:0,bosses:0,wins:0,playtime:0,bestKills:0,bestCombo:0,goldTotal:0,bestLevel:0,evos:0,fusions:0,weaponMaxed:0,noHitBest:0,locBest:{},heroBest:{},wpnDmg:{}},
     settings:{master:0.8, music:0.7, sfx:0.9, shake:1, hpbar:true, dmgnum:true, perf:_isTouch(), fps:false}};
 }
@@ -690,6 +717,13 @@ function sanitizeMeta(o){
       if(Number.isFinite(v)) up[def.id]=clamp(Math.floor(v),0,def.max);
     }
   m.up=up;
+  const wc={}; // тиры прокачки оружия в Склепе 0..50 (Заход 10); список литеральный — без TDZ на WSET
+  if(m.wcrypt&&typeof m.wcrypt==='object')
+    for(const id of ['bolt','orbit','chain','aura','scythe','mortar','bell','lantern','sword']){
+      const v=m.wcrypt[id];
+      if(Number.isFinite(v)) wc[id]=clamp(Math.floor(v),0,50);
+    }
+  m.wcrypt=wc;
   for(const k of ['master','music','sfx','shake'])
     m.settings[k]=Number.isFinite(m.settings[k])?clamp(m.settings[k],0,1):d.settings[k];
   for(const k of ['hpbar','dmgnum','perf','fps'])
@@ -1667,9 +1701,15 @@ function applySlow(e,f,t){
 }
 
 // ============================== COMBAT ==============================
+// ===== ПРОКАЧКА ОРУЖИЯ В СКЛЕПЕ (тир 0-50, Заход 10) =====
+const WSET=new Set(['bolt','orbit','chain','aura','scythe','mortar','bell','lantern','sword']);
+function wcTier(id){ return (meta.wcrypt&&meta.wcrypt[id])||0; }
+function wcDmg(src){ if(!WSET.has(src)) return 1; return 0.5+0.03*wcTier(src); }  // урон оружия: тир 0→50 = ×0.5→×2.0
+function wcSig(id){ return 1+0.01*wcTier(id); }                                   // фирменный стат (охват/радиус/дальность): ×1.0→×1.5
 function damageEnemy(e,dmg,src,kx,ky){
   if(e.dead||!run) return;
   if(e.invuln&&src!=='dev'){ if(meta.settings.dmgnum&&chance(0.2)) addText(e.x,e.y-e.r-6,'×','#9a8aff',16); return; } // Мёртвый король: неуязвим, пока факелы не зажжены (dev-удар проходит)
+  dmg*=wcDmg(src); // множитель Склепа: база ×0.5 → потолок ×2.0 (Заход 10)
   let crit=false;
   if(run.p.crit>0&&Math.random()<run.p.crit){dmg*=2;crit=true;}
   dmg=Math.max(1,Math.round(dmg*rand(0.92,1.08)));
@@ -2012,7 +2052,7 @@ function fireWeapons(dt){
         const evo=run.evo.bolt;
         let count=[1,2,2,3,3,4][lv-1]||4;
         let dmg=(10+4*lv)*p.dmgMul;
-        let pierce=lv>=5?2:1;
+        let pierce=Math.round((lv>=5?2:1)*wcSig('bolt')); // Склеп: +пробитие (фирменный стат)
         if(evo){ count+=3; pierce+=4; dmg*=1.35; }
         for(let i=0;i<count;i++){
           const t=cands[i%cands.length].e;
@@ -2029,7 +2069,7 @@ function fireWeapons(dt){
   // --- костяные клинки: орбитальные ---
   if(wl.orbit>0&&!run.fused.steel){
     const lv=wl.orbit, evo=run.evo.orbit;
-    const n=(1+lv)+(evo?2:0), rad=(66+8*lv)+(evo?22:0);
+    const n=(1+lv)+(evo?2:0), rad=((66+8*lv)+(evo?22:0))*wcSig('orbit'); // Склеп: +радиус орбиты
     const spin=(2.2+0.15*lv)*(run.taken.whirl?1.35:1)*(evo?1.4:1)/p.cdMul;
     run.orbA+=spin*dt;
     const dmg=(8+5*lv)*p.dmgMul*(evo?1.4:1);
@@ -2056,7 +2096,7 @@ function fireWeapons(dt){
   // --- кольцо гнили ---
   if(wl.aura>0){
     const lv=wl.aura, evo=run.evo.aura;
-    run.auraR=(64+16*lv)+(evo?40:0);
+    run.auraR=((64+16*lv)+(evo?40:0))*wcSig('aura'); // Склеп: +радиус кадила
     if(evo&&p.hp<p.maxhp) p.hp=Math.min(p.maxhp,p.hp+4*dt); // Святилище лечит
     wt.aura-=dt;
     if(wt.aura<=0){
@@ -2088,7 +2128,7 @@ function fireWeapons(dt){
         for(let i=0;i<n;i++){
           const a=rose?base+i/n*TAU:base+(i-(n-1)/2)*0.62;  // шире веер
           run.pb.push({x:p.x,y:p.y,vx:Math.cos(a)*470,vy:Math.sin(a)*470,dmg,pierce:999,r:evo?17:13,life:evo?5:4,hit:{},
-            boomer:true,t:0,T:(0.5+0.05*lv)*(evo?1.5:1),rot:rand(0,TAU),back:false,evo,blocks:true});
+            boomer:true,t:0,T:(0.5+0.05*lv)*(evo?1.5:1)*wcSig('scythe'),rot:rand(0,TAU),back:false,evo,blocks:true}); // Склеп: +дальность креста
         }
         A.scytheS();
         wt.scythe=Math.max(0.6,1.5-0.16*lv)*p.cdMul;        // кулдаун 1.34→0.7с (был 2.2→1.8)
@@ -2102,7 +2142,7 @@ function fireWeapons(dt){
       const lv=wl.mortar, evo=run.evo.mortar;
       // КОЛЬЦО ОГНЯ: горшки падают равномерно по кругу вокруг героя (фикс. радиус)
       const n=lv+(evo?3:0);              // lv1=1 лужа, далее по уровням (Заход 6)
-      const R=78+8*lv;                    // фикс. радиус кольца
+      const R=(78+8*lv)*wcSig('mortar');  // фикс. радиус кольца; Склеп: +охват кольца луж
       const off=rand(0,TAU);
       for(let i=0;i<n;i++){
         const a=off+i/n*TAU;
@@ -2117,7 +2157,7 @@ function fireWeapons(dt){
     wt.bell-=dt;
     if(wt.bell<=0){
       const lv=wl.bell, evo=run.evo.bell, knell=run.fused.knell; // Святой набат: больше волна + замедление
-      const maxR=(120+22*lv)*(evo?1.5:1)*(knell?1.5:1), dmg=(12+6*lv)*p.dmgMul*(evo?1.4:1)*(knell?1.4:1);
+      const maxR=(120+22*lv)*(evo?1.5:1)*(knell?1.5:1)*wcSig('bell'), dmg=(12+6*lv)*p.dmgMul*(evo?1.4:1)*(knell?1.4:1); // Склеп: +радиус волны
       run.rings.push({x:p.x,y:p.y,r:18,maxR,dmg,hit:{},knell});
       A.nova();
       wt.bell=Math.max(1.1,2.4-0.13*lv)*p.cdMul*(evo?0.65:1)*(knell?0.6:1);
@@ -2127,7 +2167,7 @@ function fireWeapons(dt){
   if(wl.lantern>0){
     const lv=wl.lantern, evo=run.evo.lantern;
     const spear=run.fused.spear; // Копьё света: тонкий длинный луч сквозь всех на линии
-    let tgt=null,bd=1e9; const range=(150+22*lv)*(evo?1.4:1)*(spear?6:1);
+    let tgt=null,bd=1e9; const range=(150+22*lv)*(evo?1.4:1)*(spear?6:1)*wcSig('lantern'); // Склеп: +дальность луча
     for(const e of run.en){ if(e.dead) continue; const d=dist2(p.x,p.y,e.x,e.y); if(d<bd){bd=d;tgt=e;} }
     if(tgt&&bd<range*range){
       run.lanternOn=true; // есть цель — фонарь горит
@@ -2141,7 +2181,7 @@ function fireWeapons(dt){
           // КОПЬЁ СВЕТА: тонкая линия, уходит чуть за экран, жжёт ВСЕХ на пути
           wt.lantern=0.09;
           const a=run.lanternAim, ca=Math.cos(a), sa=Math.sin(a);
-          const beamLen=Math.hypot(W,H)*0.62, halfW=15, dmg=(9+5*lv)*p.dmgMul;
+          const beamLen=Math.hypot(W,H)*0.62/ZOOM, halfW=15, dmg=(9+5*lv)*p.dmgMul;
           run.lanternBeam={x:p.x,y:p.y,a,len:beamLen,t:0.09,max:0.09};
           for(const e of run.en){
             if(e.dead) continue;
@@ -2177,7 +2217,7 @@ function fireWeapons(dt){
   if(wl.sword>0&&!run.fused.steel){
     const lv=wl.sword, evo=run.evo.sword;
     const cnt=1+(lv>=3?1:0)+(evo?2:0);            // 1 → 2 на lv3 → +2 эво
-    const R=150+18*lv, spd=170+14*lv;             // радиус действия и скорость (скорость ×0.5)
+    const R=(150+18*lv)*wcSig('sword'), spd=170+14*lv; // радиус действия (Склеп: +радиус сика); скорость ×0.5
     const dmg=(10+5*lv)*p.dmgMul*(evo?1.5:1), hitR=evo?24:18; // урон ×0.5
     while(run.swords.length<cnt) run.swords.push({x:p.x,y:p.y,ang:0});
     while(run.swords.length>cnt) run.swords.pop();
@@ -2218,7 +2258,7 @@ function fireChain(lv){
   const bRef=run.bossRef;
   if(bRef&&!bRef.dead&&dist2(p.x,p.y,bRef.x,bRef.y)<430*430) cur=bRef;
   const evo=run.evo.chain;
-  const jumps=2+lv+(run.fused.storm?3:0)+(evo?3:0);
+  const jumps=Math.round((2+lv+(run.fused.storm?3:0)+(evo?3:0))*wcSig('chain')); // Склеп: +прыжки молнии (охват)
   let dmg=(14+7*lv)*p.dmgMul*(evo?1.2:1);
   const seen=new Set(), pts=[{x:p.x,y:p.y}];
   for(let i=0;i<jumps&&cur;i++){
@@ -2274,7 +2314,7 @@ function updateEnemies(dt){
       e.burnT-=dt; e.burnTick=(e.burnTick||0)-dt;
       if(e.burnTick<=0){
         e.burnTick=0.3;
-        damageEnemy(e,(e.burnD||4)*0.3,'mortar');
+        damageEnemy(e,(e.burnD||4)*0.3,'burn'); // DoT горения: не-оружейный src (без двойного wcDmg + не зависит от тира воды — фикс ревью 10)
         if(run.parts.length<560) run.parts.push({x:e.x+rand(-e.r,e.r)*0.6,y:e.y-rand(0,e.r),vx:rand(-8,8),vy:-rand(18,40),life:rand(0.3,0.6),max:0.6,color:'#ff8a3a',size:rand(1.4,2.6)});
         if(chance(0.5)) forNear(e.x,e.y,48,o=>{ if(!o.dead&&o!==e&&!(o.burnT>0)&&dist2(e.x,e.y,o.x,o.y)<46*46){ o.burnT=Math.max(o.burnT||0,1.6); o.burnD=e.burnD; } });
       }
@@ -2311,9 +2351,9 @@ function updateEnemies(dt){
         else{const s=(e.id%2?1:-1);mvx=-dy/d*e.spd*0.5*s;mvy=dx/d*e.spd*0.5*s;}
         e.atkT-=dt;
         if(e.atkT<=0&&d<520){
-          e.atkT=2.4;
+          e.atkT=3.1; // скорострельность −30% (Заход 10)
           const a=Math.atan2(dy,dx);
-          ebAdd({x:e.x,y:e.y,vx:Math.cos(a)*240,vy:Math.sin(a)*240,dmg:e.dmg,r:5,life:4,c:'#9ef06a'});
+          ebAdd({x:e.x,y:e.y,vx:Math.cos(a)*168,vy:Math.sin(a)*168,dmg:e.dmg,r:7,life:5.4,c:'#9ef06a'}); // снаряд −30% скорости, +30% размер (life↑ чтобы долетал)
         }
         break;
       }
@@ -2375,10 +2415,10 @@ function updateEnemies(dt){
     e.kx*=Math.max(0,1-7*dt); e.ky*=Math.max(0,1-7*dt);
     // отставших телепортируем вперёд по курсу (как в VS) — от орды не убежать
     if(!e.boss){
-      const lim=Math.max(1150,Math.hypot(W,H)*0.85+220); // ресайз окна не должен телепортировать орду
+      const lim=Math.max(1150,Math.hypot(W,H)*0.85/ZOOM+220); // ресайз окна не должен телепортировать орду (учёт зума)
       if(dist2(e.x,e.y,p.x,p.y)>lim*lim){
         const a=(p.moving?Math.atan2(p.my,p.mx):rand(0,TAU))+rand(-1.2,1.2);
-        const R=Math.hypot(W,H)/2+rand(80,180);
+        const R=Math.hypot(W,H)/2/ZOOM+rand(80,180);
         e.x=p.x+Math.cos(a)*R; e.y=p.y+Math.sin(a)*R;
       }
     }
@@ -2616,12 +2656,12 @@ function spawnAvalanche(e,count){
     let a=Math.atan2(e.y-p.y,e.x-p.x);            // направление = К боссу (от игрока)
     if(count>1) a+=(k-(count-1)/2)*0.5;           // веер при множественных
     const dxn=Math.cos(a), dyn=Math.sin(a);
-    const startDist=Math.hypot(W,H)*0.62+90;       // старт ЗА краем экрана, позади игрока
+    const startDist=Math.hypot(W,H)*0.62/ZOOM+90;       // старт ЗА краем экрана, позади игрока (учёт зума)
     const distToBoss=Math.hypot(e.x-p.x,e.y-p.y);
     run.tides.push({
       sx:p.x-dxn*startDist, sy:p.y-dyn*startDist, dx:dxn, dy:dyn, traveled:0,
       len:startDist+distToBoss+420, speed:(760+e.phase*80), // дольше живёт + быстрее любого игрока (фикс ревью 8B: не промахивается)
-      halfW:Math.hypot(W,H)*0.55, dmg:e.dmg*0.9, push:(210+e.phase*45), hitP:0, hit:{}
+      halfW:Math.hypot(W,H)*0.55/ZOOM, dmg:e.dmg*0.9, push:(210+e.phase*45), hitP:0, hit:{}
     });
   }
   A.nova(); shakeAdd(4);
@@ -3192,7 +3232,7 @@ function bossUpdate(e,dt,dx,dy,d,sf){
 function spawnBoss(idx, isFinal){
   const p=run.p;
   const def=BOSSES[idx]||BOSSES[0];
-  const a=rand(0,TAU), R=Math.max(W,H)*0.55+100;
+  const a=rand(0,TAU), R=Math.max(W,H)*0.55/ZOOM+100;
   const e=spawnEnemy('boss',p.x+Math.cos(a)*R,p.y+Math.sin(a)*R,{noScale:true});
   const tier=idx+1;
   e.boss=tier; e.bkind=def.kind; e.name=def.name;
@@ -3253,7 +3293,7 @@ function spawnAt(type,o){
     // упреждающий спавн по курсу игрока, чтобы от орды нельзя было просто убежать
     a=Math.atan2(p.my||0,p.mx||1)+rand(-1.1,1.1);
   } else a=rand(0,TAU);
-  const R=Math.hypot(W,H)/2+rand(60,160);
+  const R=Math.hypot(W,H)/2/ZOOM+rand(60,160);
   return spawnEnemy(type,p.x+Math.cos(a)*R,p.y+Math.sin(a)*R,o);
 }
 function doWave(t){
@@ -3272,18 +3312,18 @@ function doWave(t){
   if(t>260)opts.push('ogre');
   if(t>175)opts.push('brutes');
   const o=pick(opts), p=run.p;
-  const ring=(type,n)=>{ for(let i=0;i<n;i++){ const a=i/n*TAU, R=Math.hypot(W,H)/2+72; spawnEnemy(type,p.x+Math.cos(a)*R,p.y+Math.sin(a)*R); } };
+  const ring=(type,n)=>{ for(let i=0;i<n;i++){ const a=i/n*TAU, R=Math.hypot(W,H)/2/ZOOM+72; spawnEnemy(type,p.x+Math.cos(a)*R,p.y+Math.sin(a)*R); } };
   switch(o){
     case 'horde':   for(let i=0;i<irand(9,14);i++) spawnAt('zombie'); break;
     case 'bats':    ring('bat',22); showBanner('','стая окружает!'); break;
     case 'hounds':  for(let i=0;i<irand(5,7);i++) spawnAt('hound'); showBanner('','свора мчится!'); break;
     case 'spiders': for(let i=0;i<irand(5,8);i++) spawnAt('spider'); showBanner('','выводок пауков'); break;
     case 'slimes':  for(let i=0;i<irand(6,9);i++) spawnAt('slime'); break;
-    case 'archers': for(let i=0;i<irand(5,7);i++) spawnAt('archer'); showBanner('','залп стрел'); break;
-    case 'spitters':for(let i=0;i<irand(5,8);i++) spawnAt('spitter'); showBanner('','кислотный плевок'); break;
+    case 'archers': for(let i=0;i<irand(2,4);i++) spawnAt('archer'); showBanner('','залп стрел'); break; // ×0.5 стрелков (Заход 10)
+    case 'spitters':for(let i=0;i<irand(2,4);i++) spawnAt('spitter'); showBanner('','кислотный плевок'); break; // ×0.5
     case 'bombers': for(let i=0;i<irand(5,8);i++) spawnAt('bomber'); showBanner('','бомбы ползут!'); break;
     case 'knights': for(let i=0;i<irand(3,4);i++) spawnAt('knight'); showBanner('','латники наступают'); break;
-    case 'cultists':for(let i=0;i<irand(4,6);i++) spawnAt('cultist'); showBanner('','культ собирается'); break;
+    case 'cultists':for(let i=0;i<irand(2,3);i++) spawnAt('cultist'); showBanner('','культ собирается'); break; // ×0.5
     case 'warpers': for(let i=0;i<irand(4,6);i++) spawnAt('warper'); showBanner('','бесы мерцают'); break;
     case 'brutes':  for(let i=0;i<irand(3,5);i++) spawnAt('brute'); showBanner('','земля дрожит...'); break;
     case 'ogre':    for(let i=0;i<irand(1,2);i++) spawnAt('ogre'); showBanner('','ОГР!'); break;
@@ -3299,7 +3339,7 @@ function director(dt){
       for(let i=0;i<D.batch;i++){
         const ty=pickType(t);
         if(ty==='bat'){
-          const a=rand(0,TAU), R=Math.hypot(W,H)/2+rand(60,160);
+          const a=rand(0,TAU), R=Math.hypot(W,H)/2/ZOOM+rand(60,160);
           const bx=run.p.x+Math.cos(a)*R, by=run.p.y+Math.sin(a)*R;
           const n=irand(2,4);
           for(let j=0;j<n;j++) spawnEnemy('bat',bx+rand(-40,40),by+rand(-40,40));
@@ -3682,7 +3722,7 @@ function drawGround(px,py){
   ctx.globalAlpha=1;
   // препятствия (твёрдые) — поверх земли/декора
   const obSpr=(SPR.obst&&SPR.obst[loc])||SPR.obst.def;
-  forObstaclesNear(px,py,Math.max(W,H)/2+OBST_CELL,o=>{
+  forObstaclesNear(px,py,Math.max(W,H)/2/ZOOM+OBST_CELL,o=>{ // учёт зума: препятствия не «попают» на мобиле (фикс ревью 10)
     const s=obSpr[o.k%obSpr.length];
     ctx.drawImage(s,Math.round(o.x-s.width/2),Math.round(o.y-s.height+6));
   });
@@ -3774,7 +3814,7 @@ function drawZones(){
     ctx.beginPath(); ctx.moveTo(b.x,b.y); ctx.lineTo(ex,ey); ctx.stroke();
     ctx.restore();
   } else if(run.weapons.lantern>0 && run.lanternOn){ // гаснет, если рядом нет цели (Заход 8A)
-    const lv=run.weapons.lantern, evo=run.evo.lantern, range=(150+22*lv)*(evo?1.4:1), half=(evo?Math.PI:0.18+0.08*lv);
+    const lv=run.weapons.lantern, evo=run.evo.lantern, range=(150+22*lv)*(evo?1.4:1)*wcSig('lantern'), half=(evo?Math.PI:0.18+0.08*lv); // рендер конуса в тон Склепу
     ctx.save(); ctx.globalCompositeOperation='lighter';
     const g2=ctx.createRadialGradient(p.x,p.y,8,p.x,p.y,range);
     g2.addColorStop(0,'rgba(255,232,150,0.22)'); g2.addColorStop(1,'rgba(255,210,90,0)');
@@ -3859,9 +3899,10 @@ function drawAura(){
   ctx.strokeStyle='rgba(255,225,140,0.14)';
   ctx.beginPath();ctx.arc(p.x,p.y,rr*0.82,0,TAU);ctx.stroke();
 }
+const COIN_SC=1.5*(MOBILE?0.7:1); // монета ×1.5; на мобиле ещё −30% (Заход 10)
 function drawGems(){
   for(const g of run.gems){
-    const bob=Math.sin(g.t*4)*2.5;
+    const bob=g.kind==='xp'?0:Math.sin(g.t*4)*2.5; // кристаллы опыта НЕ качаются (Заход 10); монеты/сердца/сундуки — да
     let spr;
     if(g.kind==='heart')spr=SPR.heart;
     else if(g.kind==='chest')spr=SPR.chest;
@@ -3869,7 +3910,7 @@ function drawGems(){
     else if(g.kind==='bomb')spr=SPR.bomb;
     else if(g.kind==='coin')spr=SPR.coin;
     else spr=g.v>=50?SPR.gem50:g.v>=20?SPR.gem20:g.v>=5?SPR.gem5:SPR.gem1;
-    if(g.kind==='coin'){ const cw=spr.width*1.5, ch=spr.height*1.5; ctx.drawImage(spr,g.x-cw/2,g.y-ch/2+bob,cw,ch); } // монета ×1.5 визуально (Заход 5)
+    if(g.kind==='coin'){ const cw=spr.width*COIN_SC, ch=spr.height*COIN_SC; ctx.drawImage(spr,g.x-cw/2,g.y-ch/2+bob,cw,ch); }
     else ctx.drawImage(spr,g.x-spr.width/2,g.y-spr.height/2+bob);
   }
 }
@@ -4572,7 +4613,8 @@ function render(){
   if(now-_shkLast>25){ _shkLast=now; _shkX=Math.random()*2-1; _shkY=Math.random()*2-1; } // ~1.5× медленнее
   const sx=_shkX*shk, sy=_shkY*shk;
   ctx.save();
-  ctx.translate(Math.round(W/2-px+sx),Math.round(H/2-py+sy)); // целые пиксели — нет швов между тайлами
+  if(ZOOM!==1){ ctx.translate(Math.round(W/2+sx),Math.round(H/2+sy)); ctx.scale(ZOOM,ZOOM); ctx.translate(Math.round(-px),Math.round(-py)); } // зум-аут (мобайл, Заход 10)
+  else ctx.translate(Math.round(W/2-px+sx),Math.round(H/2-py+sy)); // целые пиксели — нет швов между тайлами
   if(run) drawGround(px,py);
   if(run){
     drawDecals(px,py);
@@ -4601,7 +4643,7 @@ function render(){
   // стрелка к боссу за экраном
   const b=run&&run.bossRef;
   if(b&&!b.dead){
-    const bx=b.x-px+W/2, by=b.y-py+H/2;
+    const bx=(b.x-px)*ZOOM+W/2, by=(b.y-py)*ZOOM+H/2; // учёт зума камеры (Заход 10)
     if(bx<-20||bx>W+20||by<-20||by>H+20){
       const a=Math.atan2(b.y-py,b.x-px);
       const ex=clamp(W/2+Math.cos(a)*W,40,W-40), ey=clamp(H/2+Math.sin(a)*H,86,H-40);
@@ -4636,7 +4678,7 @@ function render(){
       const g=ctx.createRadialGradient(W/2,H/2,dr*0.5,W/2,H/2,dr*2.5);
       g.addColorStop(0,'rgba(3,2,7,0)'); g.addColorStop(1,'rgba(3,2,7,'+(0.93*kd).toFixed(2)+')');
       ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-      if(run.torches) for(const tc of run.torches){ if(!tc.lit) continue; const txs=tc.x-px+W/2, tys=tc.y-6-py+H/2; const tgl=ctx.createRadialGradient(txs,tys,2,txs,tys,52); tgl.addColorStop(0,'rgba(255,200,90,'+(0.8*kd).toFixed(2)+')'); tgl.addColorStop(1,'rgba(255,150,40,0)'); ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle=tgl; ctx.fillRect(txs-56,tys-56,112,112); ctx.restore(); }
+      if(run.torches) for(const tc of run.torches){ if(!tc.lit) continue; const txs=(tc.x-px)*ZOOM+W/2, tys=(tc.y-6-py)*ZOOM+H/2, gr=52*ZOOM; const tgl=ctx.createRadialGradient(txs,tys,2,txs,tys,gr); tgl.addColorStop(0,'rgba(255,200,90,'+(0.8*kd).toFixed(2)+')'); tgl.addColorStop(1,'rgba(255,150,40,0)'); ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle=tgl; ctx.fillRect(txs-gr-4,tys-gr-4,gr*2+8,gr*2+8); ctx.restore(); } // учёт зума (фикс ревью 10)
     }
   }
   if(!run) drawMenuAmbient();
@@ -4961,7 +5003,7 @@ function startRun(){
   // стартовое кольцо упырей, чтобы бой начинался сразу
   for(let i=0;i<8;i++){
     const a=i/8*TAU+rand(-0.2,0.2);
-    const R=Math.min(W,H)/2+rand(40,120);
+    const R=Math.min(W,H)/2/ZOOM+rand(40,120); // учёт зума (фикс ревью 10)
     spawnEnemy('zombie',Math.cos(a)*R,Math.sin(a)*R);
   }
   refreshItems();
@@ -5081,6 +5123,28 @@ function buildShop(){
       saveMeta(); checkAchievements(); A.buy(); buildShop(); // скан: ачивка «Скупщик» (фикс ревью 8C)
     };
     g.appendChild(c);
+  }
+  // --- прокачка оружия (тир 0-50, Заход 10) ---
+  const wg=$('shopWGrid');
+  if(wg){
+    wg.innerHTML='';
+    const WUP=[['bolt','+пробитие'],['orbit','+радиус орбиты'],['chain','+прыжки молнии'],['aura','+радиус кадила'],['scythe','+дальность креста'],['mortar','+охват луж'],['bell','+радиус волны'],['lantern','+дальность луча'],['sword','+радиус сика']];
+    for(const [id,sig] of WUP){
+      const t=wcTier(id), maxed=t>=50, cost=2+Math.floor(t*0.6), dmgx=(0.5+0.03*t).toFixed(2);
+      const c=document.createElement('div'); c.className='wcard'+(maxed?' maxed':'');
+      c.innerHTML='<img class="wcico" src="'+icoURL(id)+'">'
+        +'<div class="wccol"><div class="wctop"><span class="wcname">'+(WSTAT[id]||id)+'</span><span class="wctier">'+t+'/50</span></div>'
+        +'<div class="wcbar"><div class="wcfill" style="width:'+(t/50*100)+'%"></div></div>'
+        +'<div class="wcdesc">урон ×'+dmgx+' · '+sig+' ×'+(1+0.01*t).toFixed(2)+'</div></div>'
+        +'<div class="wccost">'+(maxed?'МАКС':'◆'+cost)+'</div>';
+      c.onclick=()=>{
+        if(maxed){A.deny();return;}
+        if(meta.gold<cost){A.deny();return;}
+        meta.gold-=cost; meta.wcrypt[id]=t+1;
+        saveMeta(); A.buy(); buildShop();
+      };
+      wg.appendChild(c);
+    }
   }
 }
 function buildDeath(won){
