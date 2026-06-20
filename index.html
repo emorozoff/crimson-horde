@@ -464,7 +464,7 @@ body.ingame.idle,body.ingame.idle *{cursor:none!important;} /* курсор пр
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.81';
+const VERSION='0.82';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -1315,7 +1315,7 @@ function inPool(x,y){
 // ============================== RUN STATE ==============================
 const ETYPES={
   zombie: {r:14, hp:18,  spd:55,  dmg:8,  xp:1,   behav:'chase'},
-  bat:    {r:9,  hp:7,   spd:102, dmg:2.5,xp:1,   behav:'swarm'},
+  bat:    {r:9,  hp:7,   spd:128, dmg:5,  xp:1,   behav:'swarm'},
   slime:  {r:16, hp:32,  spd:42,  dmg:9,  xp:2,   behav:'hop'},
   spitter:{r:13, hp:26,  spd:70,  dmg:7,  xp:3,   behav:'ranged'},
   brute:  {r:24, hp:150, spd:30,  dmg:22, xp:8,   behav:'tank'},
@@ -1326,7 +1326,7 @@ const ETYPES={
   drowned: {r:15,hp:36,spd:44,dmg:11,xp:2,behav:'chase'},
   larva: {r:8,hp:8,spd:52,dmg:4,xp:1,behav:'hop'},
   knight: {r:16,hp:130,spd:34,dmg:16,xp:6,behav:'tank'},
-  hound: {r:12,hp:30,spd:140,dmg:13,xp:4,behav:'fast'},
+  hound: {r:12,hp:30,spd:112,dmg:6.5,xp:4,behav:'fast'},
   bomber: {r:15,hp:24,spd:58,dmg:6,xp:3,behav:'exploder'},
   archer: {r:12,hp:24,spd:64,dmg:9,xp:3,behav:'ranged'},
   cultist: {r:13,hp:30,spd:60,dmg:10,xp:4,behav:'ranged'},
@@ -1818,6 +1818,7 @@ const DIFFICULTY={
   mul: 1.2,                                  // общий множитель сложности (+20%)
   enemyHp: 0.5,                              // глобальный множитель HP ВСЕХ врагов (баланс: ÷2)
   warm: m => 0.65 + 0.35*Math.min(1, m/6),   // тёплый старт: 0.65×→1× к 6:00 (легче ТОЛЬКО начало; РУЧКА «лёгкость старта»)
+  hpWarm: m => 0.7 + 0.3*Math.min(1, m/4),    // старт: −30% HP ВСЕМ мобам, спадает к 4:00 (только HP; РУЧКА)
   hp:  m => 1 + 0.55*m + 0.17*m*m,           // кривая HP врага по времени
   dmg: m => 1 + 0.22*m,                      // кривая урона врага по времени
   spd: m => 1 + Math.min(0.4, m*0.045),      // кривая скорости врага (mul НЕ применяется — игра и так ускорена)
@@ -1827,7 +1828,7 @@ const DIFFICULTY={
 function spawnEnemy(type,x,y,o={}){
   const b=ETYPES[type], m=run.time/60;
   const emul=DIFFICULTY.mul*DIFFICULTY.warm(m)*(run.locDiff||1); // пик × тёплый старт × множитель локации (Заход 13)
-  const hpMul=o.noScale?1:DIFFICULTY.hp(m)*emul;
+  const hpMul=o.noScale?1:DIFFICULTY.hp(m)*emul*DIFFICULTY.hpWarm(m);
   const dmgMul=o.noScale?1:DIFFICULTY.dmg(m)*emul;
   const e={
     id:eid++, type, behav:b.behav||'chase', x, y, r:b.r,
