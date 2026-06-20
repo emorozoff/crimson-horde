@@ -479,7 +479,7 @@ body.ingame.idle,body.ingame.idle *{cursor:none!important;} /* курсор пр
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.99';
+const VERSION='1.0';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -3188,6 +3188,7 @@ BOSS_MECH.deadking=function(e,dt,dx,dy,d,sf){
 };
 
 function bossUpdate(e,dt,dx,dy,d,sf){
+  dt*=(e.atkSlow||1); // боссы кроме Матери роя: темп атак/действий −30% (Заход 34)
   const mech=BOSS_MECH[e.bkind]; if(mech){ mech(e,dt,dx,dy,d,sf); return; }
   const f=e.hp/e.maxhp, tier=e.boss;
   e.phase=f>0.66?0:f>0.33?1:2;
@@ -3270,8 +3271,10 @@ function spawnBoss(idx, isFinal){
   const tier=idx+1;
   e.boss=tier; e.bkind=def.kind; e.name=def.name;
   const m=run.time/60;
-  e.maxhp=e.hp=Math.round(1100*Math.pow(tier,1.45)*DIFFICULTY.bossHp(m)*DIFFICULTY.mul*DIFFICULTY.warm(m)); // warm → боссы слабее на ранних минутах (убиваемы), полная сила к 9:00
-  e.r=42; e.spd=42; e.dmg=(15+7*tier)*DIFFICULTY.bossDmg(m)*DIFFICULTY.mul*DIFFICULTY.warm(m);
+  const bw=(def.kind==='matron')?1:0.7; // все боссы КРОМЕ Матери роя слабее на 30%: HP, урон, темп атак (Заход 34)
+  e.maxhp=e.hp=Math.round(1100*Math.pow(tier,1.45)*DIFFICULTY.bossHp(m)*DIFFICULTY.mul*DIFFICULTY.warm(m)*bw); // warm → боссы слабее на ранних минутах (убиваемы), полная сила к 9:00
+  e.r=42; e.spd=42; e.dmg=(15+7*tier)*DIFFICULTY.bossDmg(m)*DIFFICULTY.mul*DIFFICULTY.warm(m)*bw;
+  e.atkSlow=bw; // множитель темпа атак/действий (dt-скейл в bossUpdate): 0.7 = на 30% реже
   e.xp=Math.round(110*tier*(1+m*0.12));
   e.sumNext=true; e.a1=2.5; e.a2=6;
   if(isFinal){ e.final=true; e.maxhp=e.hp=Math.round(e.maxhp*1.6); e.r=50; e.dmg*=1.15; }
