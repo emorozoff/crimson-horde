@@ -478,7 +478,7 @@ body.ingame.idle,body.ingame.idle *{cursor:none!important;} /* курсор пр
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.89';
+const VERSION='0.90';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -1477,7 +1477,7 @@ const UPGRADES=[
   {id:'speed', kind:'p', name:'Сапоги пилигрима', max:5, desc:()=>'+12% к скорости движения', apply:r=>{r.p.spdMul+=0.12;}},
   {id:'heart', kind:'p', name:'Священное сердце', max:5, desc:()=>'+25 макс. HP и лечит 25', apply:r=>{r.p.maxhp+=25;r.p.hp=Math.min(r.p.maxhp,r.p.hp+25);}},
   {id:'regen', kind:'p', name:'Святой елей', max:5, desc:()=>'+0.5 HP/с восстановления', apply:r=>{r.p.regen+=0.5;}},
-  {id:'magnet', kind:'p', name:'Магнит', max:4, desc:()=>'+25% радиус сбора', apply:r=>{r.p.magMul+=0.25;}},
+  {id:'magnet', kind:'p', name:'Магнит', max:4, desc:()=>'+30% радиус сбора', apply:r=>{r.p.magMul+=0.30;}},
   {id:'might', kind:'p', name:'Наручи', max:5, desc:()=>'+14% ко всему урону', apply:r=>{r.p.dmgMul+=0.14;}},
   {id:'haste', kind:'p', name:'Песочные часы', max:5, desc:()=>'-8% перезарядка оружия', apply:r=>{r.p.cdMul*=0.92;}},
   {id:'crit', kind:'p', name:'Серебряные пули', max:4, desc:()=>'+10% шанс крита (двойной урон)', apply:r=>{r.p.crit+=0.10;}},
