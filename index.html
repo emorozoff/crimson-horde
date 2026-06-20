@@ -238,6 +238,7 @@ h1,h2,.serif{font-family:var(--pix);}
 /* ---------- shop ---------- */
 #shopGrid,#heroGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;width:min(880px,92vw);max-height:46vh;overflow-y:auto;padding:4px;}
 #heroGrid{grid-template-columns:repeat(auto-fit,minmax(210px,1fr));}
+#shopGrid{grid-template-columns:repeat(auto-fit,minmax(230px,1fr));} /* перма-карточки как карточки оружия (Заход 29) */
 .mcard{padding:13px;border:1px solid var(--line);border-radius:8px;background:linear-gradient(180deg,#1c1118,#120a10);cursor:pointer;transition:.12s;pointer-events:auto;}
 .mcard:hover{border-color:var(--gold);box-shadow:0 4px 18px #e7b54a33;}
 .mcard.maxed{opacity:.55;cursor:default;}
@@ -313,15 +314,10 @@ body.ingame.idle,body.ingame.idle *{cursor:none!important;} /* курсор пр
   .btn.big{font-size:20px;padding:14px 44px;}
   #deathGrid{font-size:13px;gap:4px 16px;}
   .deathtitle{font-size:38px;}
-  /* СКЛЕП: ОДИН скролл на всё окно — секции развёрнуты, без внутренних скроллов; перма-карточки компактные квадратные (как герои) */
+  /* СКЛЕП: ОДИН скролл на всё окно; перма-карточки — ряды как у карточек оружия (Заход 29) */
   #scrShop{justify-content:flex-start;}
-  #shopGrid{grid-template-columns:repeat(2,1fr);gap:8px;max-height:none;overflow:visible;}
+  #shopGrid{grid-template-columns:1fr;gap:8px;max-height:none;overflow:visible;}
   #shopWGrid{max-height:none;overflow:visible;}
-  #shopGrid .mcard{padding:12px 9px;min-height:150px;display:flex;flex-direction:column;justify-content:center;text-align:center;}
-  #shopGrid .mname{font-size:15px;}
-  #shopGrid .mdesc{font-size:11px;margin:5px 0;line-height:1.35;}
-  #shopGrid .mlv{font-size:10px;letter-spacing:1.5px;}
-  #shopGrid .mcost{font-size:13px;margin-top:5px;}
   /* выбор героя на мобиле: компактные карточки в 2 колонки (≈квадратные) + БОЛЬШЕ иллюстрации */
   #heroGrid{grid-template-columns:repeat(2,1fr);gap:8px;max-height:66vh;}
   #heroGrid .mcard{padding:10px 8px;border-radius:10px;}
@@ -477,7 +473,7 @@ body.ingame.idle,body.ingame.idle *{cursor:none!important;} /* курсор пр
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.94';
+const VERSION='0.95';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -696,16 +692,16 @@ const LOCS=[
 
 // ============================== META (мета-прогрессия) ==============================
 const META_DEFS=[
-  {id:'vit', name:'Живучесть',      desc:'+20 макс. HP',                         base:25,  mul:1.6, max:8},
-  {id:'pow', name:'Мощь',           desc:'+6% к урону',                          base:30,  mul:1.6, max:8},
-  {id:'spd', name:'Прыть',          desc:'+4% к скорости',                       base:25,  mul:1.7, max:6},
-  {id:'mag', name:'Притяжение',     desc:'+12% радиус сбора кристаллов',         base:20,  mul:1.6, max:6},
-  {id:'reg', name:'Восстановление', desc:'+0.3 HP/с регенерации',                base:35,  mul:1.8, max:5},
-  {id:'vmp', name:'Святая жажда',   desc:'+1.5% урона лечит (вампиризм)',         base:50,  mul:1.8, max:5},
-  {id:'grd', name:'Жадность',       desc:'+15% золота за забег',                 base:40,  mul:1.8, max:6},
-  {id:'xpb', name:'Мудрость',       desc:'+8% опыта',                            base:35,  mul:1.8, max:6},
-  {id:'rrl', name:'Переброс',       desc:'+1 переброс на левел-апе (старт 0)',   base:80,  mul:2,   max:3},
-  {id:'rev', name:'Второе сердце',  desc:'возрождение 1 раз за забег (60% HP)',  base:300, mul:3,   max:2},
+  {id:'vit', name:'Живучесть',      desc:'+20 макс. HP',                         base:25,  mul:1.6, max:8, icon:'heart'},
+  {id:'pow', name:'Мощь',           desc:'+6% к урону',                          base:30,  mul:1.6, max:8, icon:'might'},
+  {id:'spd', name:'Прыть',          desc:'+4% к скорости',                       base:25,  mul:1.7, max:6, icon:'speed'},
+  {id:'mag', name:'Притяжение',     desc:'+12% радиус сбора кристаллов',         base:20,  mul:1.6, max:6, icon:'magnet'},
+  {id:'reg', name:'Восстановление', desc:'+0.3 HP/с регенерации',                base:35,  mul:1.8, max:5, icon:'regen'},
+  {id:'vmp', name:'Святая жажда',   desc:'+1.5% урона лечит (вампиризм)',         base:50,  mul:1.8, max:5, icon:'leech'},
+  {id:'grd', name:'Жадность',       desc:'+15% золота за забег',                 base:40,  mul:1.8, max:6, icon:'alch'},
+  {id:'xpb', name:'Мудрость',       desc:'+8% опыта',                            base:35,  mul:1.8, max:6, icon:'syn'},
+  {id:'rrl', name:'Переброс',       desc:'+1 переброс на левел-апе (старт 0)',   base:80,  mul:2,   max:3, icon:'haste'},
+  {id:'rev', name:'Второе сердце',  desc:'возрождение 1 раз за забег (60% HP)',  base:300, mul:3,   max:2, icon:'ward'},
 ];
 function _isTouch(){ try{ return !!(navigator.maxTouchPoints>0 || ('ontouchstart' in window)); }catch(e){ return false; } } // мобильный дефолт перф (Заход 7 моб.)
 const MOBILE=_isTouch();                 // кэш: мобильное устройство (Заход 10 — зум/меньше UI/монеты)
@@ -5149,10 +5145,12 @@ function buildShop(){
   for(const d of META_DEFS){
     const lv=metaLv(d.id), cost=metaCost(d), maxed=lv>=d.max;
     const c=document.createElement('div');
-    c.className='mcard'+(maxed?' maxed':'');
-    c.innerHTML='<div class="mname">'+d.name+'</div><div class="mdesc">'+d.desc+'</div>'
-      +'<div class="mlv">'+'◆'.repeat(lv)+'◇'.repeat(d.max-lv)+'</div>'
-      +'<div class="mcost">'+(maxed?'МАКСИМУМ':'◆ '+cost)+'</div>';
+    c.className='wcard'+(maxed?' maxed':''); // тот же интерфейс, что у карточек оружия (Заход 29)
+    c.innerHTML='<img class="wcico" src="'+icoURL(d.icon)+'">'
+      +'<div class="wccol"><div class="wctop"><span class="wcname">'+d.name+'</span><span class="wctier">'+lv+'/'+d.max+'</span></div>'
+      +'<div class="wcbar"><div class="wcfill" style="width:'+(lv/d.max*100)+'%"></div></div>'
+      +'<div class="wcdesc">'+d.desc+'</div></div>'
+      +'<div class="wccost">'+(maxed?'МАКС':'◆'+cost)+'</div>';
     c.onclick=()=>{
       if(maxed){A.deny();return;}
       if(meta.gold<cost){A.deny();return;}
