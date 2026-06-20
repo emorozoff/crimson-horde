@@ -479,7 +479,7 @@ body.ingame.idle,body.ingame.idle *{cursor:none!important;} /* курсор пр
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.98';
+const VERSION='0.99';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -715,7 +715,7 @@ const ZOOM=MOBILE?0.78:1;                // зум-аут камеры на мо
 function defaultMeta(){
   return {gold:0, up:{}, wcrypt:{}, best:null, loc:'grave', hero:'hunter', heroes:{hunter:true}, bestiary:{}, ach:{}, locWon:{},
     stats:{runs:0,kills:0,bosses:0,wins:0,playtime:0,bestKills:0,bestCombo:0,goldTotal:0,bestLevel:0,evos:0,fusions:0,weaponMaxed:0,noHitBest:0,locBest:{},heroBest:{},wpnDmg:{}},
-    settings:{master:0.8, music:0.7, sfx:0.9, hpbar:true, dmgnum:true, perf:_isTouch(), fps:false}};
+    settings:{master:0.8, music:0.7, sfx:0.9, hpbar:true, dmgnum:true, perf:false, fps:false}};
 }
 // «переменная сессии» — основное хранилище; localStorage — необязательный бэкап
 function sanitizeMeta(o){
@@ -741,6 +741,7 @@ function sanitizeMeta(o){
     m.settings[k]=Number.isFinite(m.settings[k])?clamp(m.settings[k],0,1):d.settings[k];
   for(const k of ['hpbar','dmgnum','perf','fps'])
     m.settings[k]=(k in (o.settings||{}))?!!m.settings[k]:d.settings[k];
+  if(!m._optMigrated){ m.settings.perf=false; m._optMigrated=true; } // разово выключаем «оптимизацию» у старых сейвов (был авто-вкл на мобиле); дальше — ручной выбор сохраняется (Заход 33)
   if(m.best&&typeof m.best==='object'&&Number.isFinite(m.best.time))
     m.best={time:m.best.time,level:Number.isFinite(m.best.level)?m.best.level:1,kills:Number.isFinite(m.best.kills)?m.best.kills:0};
   else m.best=null;
@@ -1440,7 +1441,7 @@ function newRun(){
     heartMul:1, heartDrop:0,
     weapons:{bolt:0,orbit:0,chain:0,aura:0,scythe:0,mortar:0,bell:0,lantern:0,sword:0},
     wt:{bolt:0.4,chain:0,aura:0,scythe:0.8,mortar:1.2,bell:1.2,lantern:0}, orbA:0, auraR:0,
-    rings:[], lanternAim:0, lanternOn:false, bladePts:[], wardEvery:6.5, wardCD:6.5, wardReady:false, swords:[], fieldXp:0,
+    rings:[], lanternAim:0, lanternOn:false, lanternLit:0, bladePts:[], wardEvery:6.5, wardCD:6.5, wardReady:false, swords:[], fieldXp:0,
     taken:{}, leechPool:0,
     rerolls:(mb.rerolls||0)+(m.rerolls||0), banishes:1, banished:{}, banishMode:false, evo:{}, fused:{},
     spawnT:1.4, waveT:55, eliteT:115, bossT:180, bossIdx:0, bossTier:0, bossRef:null,
@@ -1692,13 +1693,13 @@ function pickChoice(i){
 // ============================== FX HELPERS ==============================
 function addText(x,y,str,color,size){
   if(!run) return;
-  if(run.texts.length>((meta.settings.perf||_lowperf||_fps<40)?36:90)) run.texts.shift(); // меньше цифр на слабых/мобиле
+  if(run.texts.length>(meta.settings.perf?36:90)) run.texts.shift(); // меньше цифр только в ручной оптимизации (Заход 33)
   run.texts.push({x,y,str:''+str,color,size:size||13,life:0.8,max:0.8});
 }
 function addBurst(x,y,color,n,spd,life,size){
   if(!run) return;
-  if(PERF()) n=Math.ceil(n*0.15); else if(_fps<35) n=Math.ceil(n*0.4); // перф: партиклы почти в 0; иначе адаптив (Заход 28)
-  const cap=PERF()?48:(_fps<32?180:420); // перф-режим: жёсткий кап партиклов; база 600→420
+  if(PERF()) n=Math.ceil(n*0.15); // перф (ручной): партиклы почти в 0; авто-адаптив убран (Заход 33)
+  const cap=PERF()?48:420; // перф-режим: жёсткий кап; база всегда 420 (без авто по FPS)
   for(let i=0;i<n;i++){
     if(run.parts.length>cap) return;
     const a=rand(0,TAU),v=rand(0.3,1)*spd;
@@ -2195,8 +2196,12 @@ function fireWeapons(dt){
     const spear=run.fused.spear; // Копьё света: тонкий длинный луч сквозь всех на линии
     let tgt=null,bd=1e9; const range=(150+22*lv)*(evo?1.4:1)*(spear?6:1)*wcSig('lantern'); // Склеп: +дальность луча
     for(const e of run.en){ if(e.dead) continue; const d=dist2(p.x,p.y,e.x,e.y); if(d<bd){bd=d;tgt=e;} }
-    if(tgt&&bd<range*range){
-      run.lanternOn=true; // есть цель — фонарь горит
+    const hasTgt = tgt&&bd<range*range;
+    // ПЛАВНЫЙ свет без мерцания (Заход 33): Маяк(evo) горит ровно ВСЕГДА; базовый — плавно гаснет без цели
+    const litGoal = evo?1:(hasTgt?1:0);
+    run.lanternLit = clamp((run.lanternLit||0)+(litGoal-(run.lanternLit||0))*Math.min(1,dt*7),0,1);
+    run.lanternOn = run.lanternLit>0.01;
+    if(hasTgt){
       // разворот к ближайшему врагу НЕ мгновенный
       const targetA=Math.atan2(tgt.y-p.y,tgt.x-p.x);
       const da=((targetA-run.lanternAim+Math.PI*3)%(Math.PI*2))-Math.PI, maxTurn=(spear?TAU:TAU*(1500/360))*dt; // базовый конус 1500°/с (Заход 8A), луч-синергия 360°/с
@@ -2226,7 +2231,7 @@ function fireWeapons(dt){
           });
         }
       }
-    } else { run.lanternOn=false; } // рядом никого — фонарь гаснет (рендер конуса скрыт)
+    }
   }
   // --- Стальная буря (Клинки+Меч): один огромный медленный клинок, сносящий почти всех ---
   if(run.fused.steel){
@@ -3844,11 +3849,11 @@ function drawZones(){
     ctx.strokeStyle='rgba(255,255,255,'+(0.95*al).toFixed(2)+')'; ctx.lineWidth=6;
     ctx.beginPath(); ctx.moveTo(b.x,b.y); ctx.lineTo(ex,ey); ctx.stroke();
     ctx.restore();
-  } else if(run.weapons.lantern>0 && run.lanternOn){ // гаснет, если рядом нет цели (Заход 8A)
-    const lv=run.weapons.lantern, evo=run.evo.lantern, range=(150+22*lv)*(evo?1.4:1)*wcSig('lantern'), half=(evo?Math.PI:0.18+0.08*lv); // рендер конуса в тон Склепу
+  } else if(run.weapons.lantern>0 && (run.lanternLit||0)>0.01){ // плавный свет, без мерцания (Заход 33)
+    const lv=run.weapons.lantern, evo=run.evo.lantern, range=(150+22*lv)*(evo?1.4:1)*wcSig('lantern'), half=(evo?Math.PI:0.18+0.08*lv), lit=run.lanternLit; // рендер конуса в тон Склепу
     ctx.save(); ctx.globalCompositeOperation='lighter';
     const g2=ctx.createRadialGradient(p.x,p.y,8,p.x,p.y,range);
-    g2.addColorStop(0,'rgba(255,232,150,0.22)'); g2.addColorStop(1,'rgba(255,210,90,0)');
+    g2.addColorStop(0,'rgba(255,232,150,'+(0.22*lit).toFixed(3)+')'); g2.addColorStop(1,'rgba(255,210,90,0)');
     ctx.fillStyle=g2;
     ctx.beginPath(); ctx.moveTo(p.x,p.y);
     ctx.arc(p.x,p.y,range,run.lanternAim-half,run.lanternAim+half); ctx.closePath(); ctx.fill();
@@ -4462,7 +4467,7 @@ function drawEnemy(e){
       ctx.restore();
     }
     const flashing=!PERF()&&e.flash>0; // вспышка урона — не в перф-режиме (Заход 28)
-    const alt=!(meta.settings.perf||_lowperf)&&SPR[e.type+'_a']&&((Math.floor(e.t*7)+e.id)&1); // 2 кадра ходьбы; перф-режим = статичный кадр (Заход 7)
+    const alt=!meta.settings.perf&&SPR[e.type+'_a']&&((Math.floor(e.t*7)+e.id)&1); // 2 кадра ходьбы; статичный кадр только в ручной оптимизации (Заход 33)
     let spr, bossW=null;
     if(e.boss){ spr=SPR['boss_'+e.bkind]||SPR.boss; bossW=SPR['boss_'+e.bkind+'_w']||SPR.boss_w; }
     else if(flashing) spr=(alt&&SPR[e.type+'_wa'])?SPR[e.type+'_wa']:SPR[e.type+'_w'];
@@ -4638,7 +4643,7 @@ function drawTexts(){
   }
   ctx.globalAlpha=1;
 }
-function PERF(){ return meta.settings.perf||_lowperf; } // единый флаг «оптимизация» (ручной тумблер ИЛИ авто-просадка FPS) — Заход 28
+function PERF(){ return meta.settings.perf; } // «оптимизация» — ТОЛЬКО ручной тумблер, по умолчанию выкл, не включается сам (Заход 33)
 let _vx0=0,_vx1=0,_vy0=0,_vy1=0;                        // границы видимого мира (отсечение невидимого в draw-функциях)
 let _heroLightG=null,_heroLightW=0,_heroLightH=0;       // кеш радиального градиента света героя
 function render(){
@@ -4966,7 +4971,7 @@ function loop(ts){
   let dt=(ts-lastTS)/1000; lastTS=ts;
   if(dt>0.1)dt=0.1;
   fpsBuf[fpsI++%90]=dt;
-  if((fpsI&7)===0){ let _s=0,_c=0; for(const v of fpsBuf){ if(v>0){ _s+=v; _c++; } } _fps=_c&&_s>0?_c/_s:60; _lowperf=_fps<38?true:(_fps>52?false:_lowperf); } // адаптивный FPS + авто-перф (моб.)
+  if((fpsI&7)===0){ let _s=0,_c=0; for(const v of fpsBuf){ if(v>0){ _s+=v; _c++; } } _fps=_c&&_s>0?_c/_s:60; } // бегущий FPS (для счётчика); авто-перф убран — оптимизация только вручную (Заход 33)
   if(hitStop>0) hitStop-=dt;
   if(state==='playing'&&run) update(Math.min(dt,0.05/GAMESPEED)*((hitStop>0&&!PERF())?0.12:1)*(speedFast?GAMESPEED:1)*devTimescale); // кламп ДО ×1.5 → эфф. макс-шаг 0.05 (анти-туннель); hit-stop выкл в перф (Заход 28)
   if(!(state==='paused'||state==='levelup')) render(); // не перерисовываем замороженный мир на паузе/левел-апе (Заход 28)
