@@ -464,7 +464,7 @@ body.ingame.idle,body.ingame.idle *{cursor:none!important;} /* курсор пр
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.83';
+const VERSION='0.84';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -1995,10 +1995,12 @@ function gemDrop(x,y,val){
   if(val<=0||!run) return;
   // ценность кристалла фиксируется ПРИ ДРОПЕ (множитель времени запечён, честно, без поздней инфляции)
   const value=Math.max(1,Math.round(val*(1+run.time/60*0.12)));
-  // считаем число xp-кристаллов (перф-страховка) — run.fieldXp ведём инкрементально
+  // КРИСТАЛЛЫ ОПЫТА НЕ ИСЧЕЗАЮТ НИКОГДА (Заход 18): кап поля убран — весь опыт всегда падает кристаллом и лежит до сбора.
+  // Остаётся ТОЛЬКО перф-страховка на ЧИСЛО объектов (iPhone): при переполнении опыт НЕ теряем — доливаем в существующий кристалл.
   let xpCount=0; for(const g of run.gems) if(g.kind==='xp') xpCount++;
-  if(run.fieldXp+value>xpFieldCap() || xpCount>=300){ // поле полно на ~3 ур. (или перф-кап) — излишек теряется
-    xplog('gemDrop',()=>({skip:1,field:Math.round(run.fieldXp),cap:Math.round(xpFieldCap())}));
+  if(xpCount>=300){
+    for(const g of run.gems){ if(g.kind==='xp'&&!g.dead){ g.v+=value; run.fieldXp+=value; break; } }
+    xplog('gemDrop',()=>({merge:value,field:Math.round(run.fieldXp)}));
     return;
   }
   run.fieldXp+=value;
