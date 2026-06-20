@@ -473,7 +473,7 @@ body.ingame.idle,body.ingame.idle *{cursor:none!important;} /* курсор пр
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.96';
+const VERSION='0.97';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -4873,12 +4873,12 @@ const MUSIC={
     const role=this.roleNow();
     let id=this.roles[role], d=this.deck(id);
     if(d.els[d.i]._failed){ for(const alt of [this.roles.calm,this.roles.menu]){ const dd=this.deck(alt); if(!dd.els[dd.i]._failed){ d=dd; break; } } }
-    const V=muted?0:this.vol();
+    const V=muted?0:this.vol();                            // громкость мастера — применяется МГНОВЕННО (без задержки) — Заход 31
     for(const k in this.decks){
       const dk=this.decks[k];
-      const goal=(dk===d)?V:0;
-      dk.g=clamp(dk.g+(goal-dk.g)*Math.min(1,dt*2.2),0,1);
-      this.applyDeck(dk,dk.g,muted);
+      const goal=(dk===d)?1:0;                             // dk.g теперь чистый ВЕС деки (кроссфейд ролей) 0..1, БЕЗ громкости
+      dk.g=clamp(dk.g+(goal-dk.g)*Math.min(1,dt*4),0,1);   // быстрее смена роли (выход в меню): 2.2→4
+      this.applyDeck(dk,dk.g*V,muted);                     // итоговая громкость = вес × мастер → ползунок/мьют срабатывают сразу
     }
   },
   // одна дека: внешняя громкость g + внутренний бесшовный кроссфейд-луп (2 элемента)
