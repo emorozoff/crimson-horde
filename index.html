@@ -464,7 +464,7 @@ body.ingame.idle,body.ingame.idle *{cursor:none!important;} /* курсор пр
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.78';
+const VERSION='0.79';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -675,11 +675,11 @@ const A={
 // boss = индекс финального босса локации в BOSSES (план C: общая тройка #0–2 + свой финал #3–7).
 // Темы/названия локаций перерабатываются в Tier 3 под боссов; пока сохраняем текущие.
 const LOCS=[
-  {id:'grave', name:'ЗАТОНУВШАЯ ДЕРЕВНЯ', desc:'чёрная стоячая вода по колено · топкие лужи замедляют', req:0, gold:0, boss:3},
-  {id:'swamp', name:'КРОВАВАЯ ТОПЬ', desc:'лужи замедляют всех · слизней больше · +15% золота', req:240, gold:0.15, boss:4},
-  {id:'ash',   name:'ПЕПЕЛИЩЕ',      desc:'огненные разломы · элита чаще · +25% золота', req:420, gold:0.25, boss:5},
-  {id:'crypt', name:'ЗАТОПЛЕННЫЙ СКЛЕП', desc:'ледяная вода замедляет нечисть (не тебя) · +20% золота', req:600, gold:0.20, boss:6},
-  {id:'inferno',name:'ПРЕИСПОДНЯЯ',  desc:'частые огненные разломы · элита и громилы · +35% золота', req:840, gold:0.35, boss:7},
+  {id:'grave', name:'ЗАТОНУВШАЯ ДЕРЕВНЯ', desc:'чёрная стоячая вода по колено · топкие лужи замедляют', req:0, gold:0, boss:3, diff:1.00},
+  {id:'swamp', name:'КРОВАВАЯ ТОПЬ', desc:'лужи замедляют всех · слизней больше · +15% золота', req:240, gold:0.15, boss:4, diff:1.12},
+  {id:'ash',   name:'ПЕПЕЛИЩЕ',      desc:'огненные разломы · элита чаще · +25% золота', req:420, gold:0.25, boss:5, diff:1.25},
+  {id:'crypt', name:'ЗАТОПЛЕННЫЙ СКЛЕП', desc:'ледяная вода замедляет нечисть (не тебя) · +20% золота', req:600, gold:0.20, boss:6, diff:1.38},
+  {id:'inferno',name:'ПРЕИСПОДНЯЯ',  desc:'частые огненные разломы · элита и громилы · +35% золота', req:840, gold:0.35, boss:7, diff:1.50},
 ];
 
 // ============================== META (мета-прогрессия) ==============================
@@ -1419,7 +1419,7 @@ function newRun(){
     p:{x:0,y:0,r:12,hp:maxhp,maxhp:maxhp,face:1,
        spdMul:1+mb.spd+(m.spd||0), regen:mb.reg, magBase:38, magMul:1+mb.mag,
        dmgMul:1+mb.dmg+(m.dmg||0), cdMul:1, crit:0, armor:(m.armor||0), leech:0, inv:0, god:false},
-    revives:mb.rev, xpMul:1+mb.xp, goldMul:(1+mb.gold)*(1+L.gold),
+    revives:mb.rev, xpMul:1+mb.xp, goldMul:(1+mb.gold)*(1+L.gold), locDiff:L.diff||1,
     heartMul:1, heartDrop:0,
     weapons:{bolt:0,orbit:0,chain:0,aura:0,scythe:0,mortar:0,bell:0,lantern:0,sword:0},
     wt:{bolt:0.4,chain:0,aura:0,scythe:0.8,mortar:1.2,bell:1.2,lantern:0}, orbA:0, auraR:0,
@@ -1770,7 +1770,8 @@ function killEnemy(e){
   if(!e.boss&&!e.elite){
     if(chance(0.0023+run.heartDrop)) run.gems.push({x:e.x,y:e.y,v:0,kind:'heart',mag:false,vx:0,vy:0,t:0});
     // монеты по силе врага: мясо почти не даёт, крупные/опасные — выплаты
-    const cc=(0.004+e.xp*0.0035)*COINK; // коэффициент по силе моба → кубик → 1 монета (Заход 6; COINK калибруется)
+    const coinWarm=Math.max(1, 2 - run.time/360); // тёплый старт монет: ×2 в 0:00 → ×1 к 6:00 (Заход 13)
+    const cc=(0.004+e.xp*0.0035)*COINK*coinWarm; // коэффициент по силе моба → кубик → 1 монета (Заход 6; COINK калибруется)
     if(chance(cc)) run.gems.push({x:e.x,y:e.y,v:1,kind:'coin',mag:false,vx:0,vy:0,t:0}); // РОВНО 1 монета
   }
   if(e.elite) {
@@ -1814,6 +1815,7 @@ function winGame(){
 const DIFFICULTY={
   mul: 1.2,                                  // общий множитель сложности (+20%)
   enemyHp: 0.5,                              // глобальный множитель HP ВСЕХ врагов (баланс: ÷2)
+  warm: m => 0.65 + 0.35*Math.min(1, m/6),   // тёплый старт: 0.65×→1× к 6:00 (легче ТОЛЬКО начало; РУЧКА «лёгкость старта»)
   hp:  m => 1 + 0.55*m + 0.17*m*m,           // кривая HP врага по времени
   dmg: m => 1 + 0.22*m,                      // кривая урона врага по времени
   spd: m => 1 + Math.min(0.4, m*0.045),      // кривая скорости врага (mul НЕ применяется — игра и так ускорена)
@@ -1822,8 +1824,9 @@ const DIFFICULTY={
 };
 function spawnEnemy(type,x,y,o={}){
   const b=ETYPES[type], m=run.time/60;
-  const hpMul=o.noScale?1:DIFFICULTY.hp(m)*DIFFICULTY.mul;
-  const dmgMul=o.noScale?1:DIFFICULTY.dmg(m)*DIFFICULTY.mul;
+  const emul=DIFFICULTY.mul*DIFFICULTY.warm(m)*(run.locDiff||1); // пик × тёплый старт × множитель локации (Заход 13)
+  const hpMul=o.noScale?1:DIFFICULTY.hp(m)*emul;
+  const dmgMul=o.noScale?1:DIFFICULTY.dmg(m)*emul;
   const e={
     id:eid++, type, behav:b.behav||'chase', x, y, r:b.r,
     hp:Math.round(b.hp*hpMul*DIFFICULTY.enemyHp), maxhp:Math.round(b.hp*hpMul*DIFFICULTY.enemyHp),
