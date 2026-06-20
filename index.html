@@ -424,7 +424,7 @@ body.ingame.idle,body.ingame.idle *{cursor:none!important;} /* курсор пр
     <div class="setsec">ИГРА</div>
     <div class="setrow"><label>HP-БАР У ГЕРОЯ</label><button class="toggle" id="tgHp"></button></div>
     <div class="setrow"><label>ЦИФРЫ УРОНА</label><button class="toggle" id="tgDmg"></button></div>
-    <div class="setrow"><label>РЕЖИМ ПРОИЗВОДИТЕЛЬНОСТИ</label><button class="toggle" id="tgPerf"></button></div>
+    <div class="setrow"><label>ОПТИМИЗАЦИЯ</label><button class="toggle" id="tgPerf"></button></div>
     <div class="setrow"><label>СЧЁТЧИК FPS</label><button class="toggle" id="tgFps"></button></div>
     <div class="setrow" style="margin-top:16px"><label style="color:#e07088">СБРОС ПРОГРЕССА</label><button class="btn" id="btnReset" style="padding:6px 18px;font-size:18px;border-color:#7a2433;color:#e07088">×5</button></div>
   </div>
@@ -477,7 +477,7 @@ body.ingame.idle,body.ingame.idle *{cursor:none!important;} /* курсор пр
    ===================================================================== */
 
 // ============================== UTILS ==============================
-const VERSION='0.93';
+const VERSION='0.94';
 const TAU = Math.PI*2;
 const rand=(a,b)=>a+Math.random()*(b-a);
 const irand=(a,b)=>Math.floor(a+Math.random()*(b-a+1));
@@ -496,9 +496,10 @@ function fmtNum(n){ n=Math.round(n); const a=Math.abs(n);
 function hash2(x,y){let n=Math.imul(x,374761393)+Math.imul(y,668265263)|0;n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/4294967296;}
 
 const cv=$('cv'), ctx=cv.getContext('2d');
+let _perfDPR=false; // перф-режим: рендер в 1× пикселей (выставляется после загрузки meta, чтобы не упасть на TDZ) — Заход 28
 let W=innerWidth, H=innerHeight, DPR=Math.min(devicePixelRatio||1,2);
 function resize(){
-  W=innerWidth;H=innerHeight;DPR=Math.min(devicePixelRatio||1,2);
+  W=innerWidth;H=innerHeight;DPR=_perfDPR?1:Math.min(devicePixelRatio||1,2);
   cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
   // CSS-размер обязателен: иначе на Retina (DPR=2) битмап вдвое больше окна и картинка уезжает в угол
   cv.style.width=W+'px';cv.style.height=H+'px';
@@ -541,7 +542,6 @@ const A={
       for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
       this.applyVol();
       this.musNext=this.ctx.currentTime+0.1;
-      setInterval(()=>this.musTick(),40);
     }
     if(this.ctx.state==='suspended'&&meta.settings.master>0.001&&!document.hidden) this.ctx.resume();
     if(typeof MUSIC!=='undefined') MUSIC.init();
@@ -585,8 +585,8 @@ const A={
   },
   // -------- sfx (слоёные, через компрессор) --------
   shoot(){if(!this.thr('sh',60))return; const f=rand(680,860); this.tone(f,170,0.08,'square',0.05); this.noise(0.025,0.018,4200,0,'highpass');},
-  hitE(){if(!this.thr('he',45))return; this.tone(rand(165,215),65,0.06,'triangle',0.09); this.noise(0.045,0.045,900);},
-  dieE(big){if(!this.thr('de',65))return; const k=big?0.55:1; this.tone(140*k+30,36,big?0.3:0.17,'sawtooth',big?0.16:0.1); this.noise(big?0.2:0.09,big?0.12:0.06,big?420:750);},
+  hitE(){if(!this.thr('he',45))return; this.tone(rand(165,215),65,0.06,'triangle',0.09); if(!PERF()) this.noise(0.045,0.045,900);}, // перф: без noise-слоя
+  dieE(big){if(!this.thr('de',65))return; const k=big?0.55:1; this.tone(140*k+30,36,big?0.3:0.17,'sawtooth',big?0.16:0.1); if(!PERF()) this.noise(big?0.2:0.09,big?0.12:0.06,big?420:750);}, // перф: без noise-слоя
   pickup(){
     if(!this.thr('pk',35))return;
     const n=performance.now();
@@ -761,6 +761,7 @@ let meta=defaultMeta();
     if(s) meta=sanitizeMeta(JSON.parse(s));
   }catch(e){/* file:// или приватный режим — работаем из памяти */}
 })();
+_perfDPR=!!(meta.settings&&meta.settings.perf); resize(); // применить перф-DPR после загрузки настроек (Заход 28)
 function saveMeta(){
   try{localStorage.setItem('crimson_horde_meta',JSON.stringify(meta));}catch(e){}
 }
@@ -1694,8 +1695,8 @@ function addText(x,y,str,color,size){
 }
 function addBurst(x,y,color,n,spd,life,size){
   if(!run) return;
-  if(meta.settings.perf||_lowperf||_fps<35) n=Math.ceil(n*0.4); // адаптив: режем партиклы (Заход 7 + моб.)
-  const cap=(meta.settings.perf||_lowperf||_fps<32)?180:600;
+  if(PERF()) n=Math.ceil(n*0.15); else if(_fps<35) n=Math.ceil(n*0.4); // перф: партиклы почти в 0; иначе адаптив (Заход 28)
+  const cap=PERF()?48:(_fps<32?180:420); // перф-режим: жёсткий кап партиклов; база 600→420
   for(let i=0;i<n;i++){
     if(run.parts.length>cap) return;
     const a=rand(0,TAU),v=rand(0.3,1)*spd;
@@ -1732,7 +1733,7 @@ function damageEnemy(e,dmg,src,kx,ky){
   if(run.fused.pyre&&src==='scythe'){ e.burnT=Math.max(e.burnT||0,2.2); e.burnD=Math.max(e.burnD||0,dmg*0.35); } // Крестный огонь: кресты поджигают
   if(run.p.leech>0) run.leechPool+=dmg*0.03*run.p.leech;
   if(kx&&!e.boss&&!e.elite&&e.behav!=='tank'){e.kx+=kx;e.ky+=ky;}
-  if(meta.settings.dmgnum&&(src!=='aura'||chance(0.3))) addText(e.x+rand(-8,8),e.y-e.r-6,dmg,crit?'#ffb938':'#fff',crit?22:15);
+  if(meta.settings.dmgnum&&!PERF()&&(src!=='aura'||chance(0.3))) addText(e.x+rand(-8,8),e.y-e.r-6,dmg,crit?'#ffb938':'#fff',crit?22:15); // цифры урона — выкл в перф-режиме
   if(src!=='lantern') A.hitE(); // фонарь жжёт светом — без ритмичного звука удара
   if(src!=='aura') addBurst(e.x,e.y,'#c22038',2,70,0.3,2);
   if(e.hp<=0) killEnemy(e);
@@ -2344,7 +2345,7 @@ function updateEnemies(dt){
       if(e.dead) continue;
     }
     let sf=e.slowT>0?e.slowF:1;
-    if((run.loc==='swamp'||run.loc==='crypt'||run.loc==='grave')&&inPool(e.x,e.y)) sf*=run.loc==='crypt'?0.62:0.8;
+    if(run.loc==='swamp'||run.loc==='crypt'||run.loc==='grave'){ e._poolT=(e._poolT||0)-dt; if(e._poolT<=0){ e._poolT=0.25; e._inPool=inPool(e.x,e.y); } if(e._inPool) sf*=run.loc==='crypt'?0.62:0.8; } // кеш «в луже ли» на 0.25с (Заход 28)
     const dx=p.x-e.x, dy=p.y-e.y;
     const d=Math.sqrt(dx*dx+dy*dy)||1;
     let mvx=0,mvy=0;
@@ -2422,18 +2423,20 @@ function updateEnemies(dt){
     if(!e.boss){
       e.x+=(mvx*sf+e.kx)*dt;
       e.y+=(mvy*sf+e.ky)*dt;
-      // расталкивание соседей
-      let cnt=0;
-      forNear(e.x,e.y,e.r+44,o=>{
-        if(o===e||o.dead||o.boss||cnt>4) return;
-        const d2v=dist2(e.x,e.y,o.x,o.y), rr=e.r+o.r;
-        if(d2v<rr*rr&&d2v>0.01){
-          cnt++;
-          const dd=Math.sqrt(d2v);
-          const push=(rr-dd)/dd*0.35;
-          e.x+=(e.x-o.x)*push; e.y+=(e.y-o.y)*push;
-        }
-      });
+      // расталкивание соседей (в перф-режиме НЕ толкаем врагов за экраном — невидимо, Заход 28)
+      if(!(PERF()&&(e.x<_vx0||e.x>_vx1||e.y<_vy0||e.y>_vy1))){
+        let cnt=0;
+        forNear(e.x,e.y,e.r+44,o=>{
+          if(o===e||o.dead||o.boss||cnt>4) return;
+          const d2v=dist2(e.x,e.y,o.x,o.y), rr=e.r+o.r;
+          if(d2v<rr*rr&&d2v>0.01){
+            cnt++;
+            const dd=Math.sqrt(d2v);
+            const push=(rr-dd)/dd*0.35;
+            e.x+=(e.x-o.x)*push; e.y+=(e.y-o.y)*push;
+          }
+        });
+      }
     }
     e.kx*=Math.max(0,1-7*dt); e.ky*=Math.max(0,1-7*dt);
     // отставших телепортируем вперёд по курсу (как в VS) — от орды не убежать
@@ -3290,7 +3293,7 @@ function diffNow(){
   const m=run.time/60;
   return {
     interval:clamp(1.95-run.time*0.0042,0.32,1.95),
-    cap:Math.min(40+m*32,330),
+    cap:Math.round(Math.min(40+m*32,330)*(PERF()?0.6:1)), // перф-режим: меньше врагов на экране (Заход 28)
     batch:1+Math.floor(m*0.8),
   };
 }
@@ -3664,9 +3667,9 @@ function sweep(arr){let w=0;for(let i=0;i<arr.length;i++){const o=arr[i];if(!o.d
 function update(dt){
   run.time+=dt;
   updatePlayer(dt);
+  gridBuild(); // грид ДО updateEnemies → сепарация по свежим позициям (фикс stale-grid + перф, Заход 28)
   updateEnemies(dt);
   if(state!=='playing') return; // игрок погиб в этом кадре — мир замирает
-  gridBuild();
   fireWeapons(dt);
   updateBullets(dt);
   if(state!=='playing') return;
@@ -3713,7 +3716,7 @@ function drawGround(px,py){
       ctx.drawImage(tile,x,y);
   // лужи: кровавые (Топь) / ледяные (Склеп)
   // вода: кривые, детальные пятна (НЕ ровные круги — чтобы не читались как интерактив)
-  if(loc==='swamp'||loc==='crypt'||loc==='grave'){
+  if(!PERF()&&(loc==='swamp'||loc==='crypt'||loc==='grave')){ // узор луж — в перф-режиме выкл (замедление работает и без рисунка)
     const c1=loc==='crypt'?'rgba(38,86,140,0.32)':loc==='grave'?'rgba(26,72,66,0.34)':'rgba(110,22,36,0.32)';
     const c2=loc==='crypt'?'rgba(20,52,92,0.42)':loc==='grave'?'rgba(14,46,44,0.44)':'rgba(70,14,24,0.42)';
     const cs=poolCell(); // сетка луж per-локация (Заход 8A)
@@ -3732,6 +3735,7 @@ function drawGround(px,py){
         for(let k=0;k<3;k++){ const a=sd*TAU+k*2.2; ctx.beginPath(); ctx.ellipse(pl.x+Math.cos(a)*pl.r*0.42, pl.y+Math.sin(a)*pl.r*0.26, pl.r*0.16, pl.r*0.045, a,0,TAU); ctx.fill(); }
       }
   }
+  if(!PERF()){ // слой декора — в перф-режиме выкл
   const ds=224;
   const cx0=Math.floor((px-vw)/ds), cx1=Math.floor((px+vw)/ds); // учёт зума: декор до краёв
   const cy0=Math.floor((py-vh)/ds), cy1=Math.floor((py+vh)/ds);
@@ -3744,6 +3748,7 @@ function drawGround(px,py){
     }
   }
   ctx.globalAlpha=1;
+  }
   // препятствия (твёрдые) — поверх земли/декора
   const obSpr=(SPR.obst&&SPR.obst[loc])||SPR.obst.def;
   forObstaclesNear(px,py,Math.max(W,H)/2/ZOOM+OBST_CELL,o=>{ // учёт зума: препятствия не «попают» на мобиле (фикс ревью 10)
@@ -3909,6 +3914,7 @@ function drawAura(){
   const p=run.p, r=run.auraR;
   const pulse=0.97+Math.sin(performance.now()*0.011)*0.03; // тоньше амплитуда, быстрее
   const rr=r*pulse;
+  if(PERF()){ ctx.strokeStyle='rgba(255,225,140,0.4)'; ctx.lineWidth=2.5; ctx.beginPath();ctx.arc(p.x,p.y,rr,0,TAU);ctx.stroke(); return; } // оптимизация: только тонкая обводка ауры
   // лёгкое тёплое свечение «дыма кадила», дышит (без shadowBlur — радиальный градиент)
   const gl=ctx.createRadialGradient(p.x,p.y,rr*0.45, p.x,p.y,rr*1.05);
   gl.addColorStop(0,'rgba(255,210,120,0.05)');
@@ -3926,6 +3932,7 @@ function drawAura(){
 const COIN_SC=1.5*(MOBILE?0.7:1); // монета ×1.5; на мобиле ещё −30% (Заход 10)
 function drawGems(){
   for(const g of run.gems){
+    if(g.x<_vx0||g.x>_vx1||g.y<_vy0||g.y>_vy1) continue; // отсечение невидимого (Заход 28)
     const bob=g.kind==='xp'?0:Math.sin(g.t*4)*2.5; // кристаллы опыта НЕ качаются (Заход 10); монеты/сердца/сундуки — да
     let spr;
     if(g.kind==='heart')spr=SPR.heart;
@@ -3949,7 +3956,7 @@ function drawEnemies(px,py){
       e._emT=_emNow; addBurst(e.x,e.y+e.r*0.5,'#3a2a16',8,140,0.5,3);
     }
   }
-  const vx0=px-W/2-80,vx1=px+W/2+80,vy0=py-H/2-80,vy1=py+H/2+80;
+  const vx0=_vx0,vx1=_vx1,vy0=_vy0,vy1=_vy1; // зум-корректная рамка отсечения (Заход 28)
   let bosses=null;
   for(const e of run.en){
     if(e.dead) continue;
@@ -4452,7 +4459,7 @@ function drawEnemy(e){
       ctx.stroke();
       ctx.restore();
     }
-    const flashing=e.flash>0;
+    const flashing=!PERF()&&e.flash>0; // вспышка урона — не в перф-режиме (Заход 28)
     const alt=!(meta.settings.perf||_lowperf)&&SPR[e.type+'_a']&&((Math.floor(e.t*7)+e.id)&1); // 2 кадра ходьбы; перф-режим = статичный кадр (Заход 7)
     let spr, bossW=null;
     if(e.boss){ spr=SPR['boss_'+e.bkind]||SPR.boss; bossW=SPR['boss_'+e.bkind+'_w']||SPR.boss_w; }
@@ -4460,18 +4467,17 @@ function drawEnemy(e){
     else spr=alt?SPR[e.type+'_a']:SPR[e.type];
     const base=ETYPES[e.type].r;
     const sc=e.r/base*(e.boss?1.25:1);
-    const squash=1+Math.sin(e.t*9)*0.018;
+    const squash=PERF()?1:1+Math.sin(e.t*9)*0.018; // «дыхание» мобов — не в перф-режиме
     const chomp=(e.boss&&e.chomp>0)?Math.sin((1-e.chomp/0.13)*Math.PI)*0.18:0; // «глоток» Людоеда: сплющивание тела при поедании
     const face=p.x>e.x?1:-1;
-    // тень
-    ctx.fillStyle='rgba(0,0,0,0.3)';
-    ctx.beginPath();ctx.ellipse(e.x,e.y+e.r*0.85,e.r*0.8,e.r*0.3,0,0,TAU);ctx.fill();
+    // тень (в режиме оптимизации — выкл)
+    if(!PERF()){ ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.beginPath();ctx.ellipse(e.x,e.y+e.r*0.85,e.r*0.8,e.r*0.3,0,0,TAU);ctx.fill(); }
     if(e.elite){
-      ctx.strokeStyle=`rgba(231,181,74,${0.5+Math.sin(e.t*6)*0.25})`;
+      ctx.strokeStyle=PERF()?'rgba(231,181,74,0.6)':`rgba(231,181,74,${0.5+Math.sin(e.t*6)*0.25})`;
       ctx.lineWidth=2.5;
       ctx.beginPath();ctx.arc(e.x,e.y,e.r+7,0,TAU);ctx.stroke();
     }
-    if(e.boss&&BOSS_DRAW[e.bkind]){
+    if(e.boss&&BOSS_DRAW[e.bkind]&&!PERF()){ // в перф-режиме — плоский спрайт босса
       BOSS_DRAW[e.bkind](e,flashing);
     } else {
       // подъём из земли: пока вылезает — клип по «линии земли» + сдвиг вниз + земляной холмик
@@ -4519,8 +4525,7 @@ function drawPlayer(){
     ctx.fillRect(p.x-w/2,by,w*hpf,3);
   }
   if(p.inv>0&&Math.floor(performance.now()*0.02)%2===0) return;
-  ctx.fillStyle='rgba(0,0,0,0.35)';
-  ctx.beginPath();ctx.ellipse(p.x,p.y+14,11,4.5,0,0,TAU);ctx.fill();
+  if(!PERF()){ ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.beginPath();ctx.ellipse(p.x,p.y+14,11,4.5,0,0,TAU);ctx.fill(); }
   const bob=p.moving?Math.sin(performance.now()*0.018)*1.6:0;
   const hid=(run&&run.hero)||'hunter';
   const idle=SPR['player_'+hid]||SPR.player_hunter, walk=SPR['player_'+hid+'_a']||SPR.player_hunter_a;
@@ -4562,6 +4567,7 @@ function drawSwords(){
 function drawBullets(){
   // снаряды игрока — пиксельные спрайты, повёрнутые по направлению
   for(const b of run.pb){
+    if(b.x<_vx0||b.x>_vx1||b.y<_vy0||b.y>_vy1) continue; // отсечение
     if(b.boomer){
       ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.rot);
       ctx.drawImage(SPR.scythe,-SPR.scythe.width/2,-SPR.scythe.height/2);
@@ -4575,6 +4581,7 @@ function drawBullets(){
   }
   // вражеские снаряды — пиксельные орбы своей стихии
   for(const b of run.eb){
+    if(b.x<_vx0||b.x>_vx1||b.y<_vy0||b.y>_vy1) continue; // отсечение
     const rx=Math.round(b.x), ry=Math.round(b.y), s=Math.max(2,Math.round(b.r));
     ctx.fillStyle='#0b0710'; ctx.fillRect(rx-s-1,ry-s-1,(s+1)*2,(s+1)*2);
     ctx.fillStyle=b.c; ctx.fillRect(rx-s,ry-s,s*2,s*2);
@@ -4583,11 +4590,13 @@ function drawBullets(){
   }
 }
 function drawFx(){
+  const perf=PERF();
   for(const q of run.fx){
+    const p0=q.pts[0]; if(p0&&(p0.x<_vx0-200||p0.x>_vx1+200||p0.y<_vy0-200||p0.y>_vy1+200)) continue; // отсечение
     const al=q.t/q.max;
     ctx.save();
-    ctx.globalCompositeOperation='lighter';
-    for(const pass of [[5,'rgba(120,180,255,'+al*0.35+')'],[2,'rgba(230,245,255,'+al*0.9+')']]){
+    if(!perf) ctx.globalCompositeOperation='lighter';
+    for(const pass of (perf?[[2,'rgba(210,235,255,'+(al*0.9)+')']]:[[5,'rgba(120,180,255,'+al*0.35+')'],[2,'rgba(230,245,255,'+al*0.9+')']])){
       ctx.strokeStyle=pass[1];
       ctx.lineWidth=pass[0];
       ctx.beginPath();
@@ -4605,25 +4614,31 @@ function drawFx(){
 }
 function drawParts(){
   for(const q of run.parts){
+    if(q.x<_vx0||q.x>_vx1||q.y<_vy0||q.y>_vy1) continue; // отсечение невидимого (Заход 28)
+    const s=Math.max(0.5,q.size*(q.life/q.max));
     ctx.globalAlpha=clamp(q.life/q.max,0,1);
     ctx.fillStyle=q.color;
-    ctx.beginPath();ctx.arc(q.x,q.y,Math.max(0.5,q.size*(q.life/q.max)),0,TAU);ctx.fill();
+    ctx.fillRect(q.x-s,q.y-s,s*2,s*2); // квадрат вместо дуги — дешевле, пиксель-стиль
   }
   ctx.globalAlpha=1;
 }
 function drawTexts(){
   ctx.textAlign='center';
+  const perf=PERF();
   for(const q of run.texts){
+    if(q.x<_vx0||q.x>_vx1||q.y<_vy0||q.y>_vy1) continue; // отсечение невидимого
     const al=clamp(q.life/q.max*1.4,0,1);
     ctx.font='bold '+q.size+'px sans-serif';
     ctx.globalAlpha=al;
-    ctx.fillStyle='#000';
-    ctx.fillText(q.str,q.x+1.5,q.y+1.5);
+    if(!perf){ ctx.fillStyle='#000'; ctx.fillText(q.str,q.x+1.5,q.y+1.5); } // тень-подложка — не в перф-режиме
     ctx.fillStyle=q.color;
     ctx.fillText(q.str,q.x,q.y);
   }
   ctx.globalAlpha=1;
 }
+function PERF(){ return meta.settings.perf||_lowperf; } // единый флаг «оптимизация» (ручной тумблер ИЛИ авто-просадка FPS) — Заход 28
+let _vx0=0,_vx1=0,_vy0=0,_vy1=0;                        // границы видимого мира (отсечение невидимого в draw-функциях)
+let _heroLightG=null,_heroLightW=0,_heroLightH=0;       // кеш радиального градиента света героя
 function render(){
   ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.imageSmoothingEnabled=false; // чёткие пиксели спрайтов
@@ -4633,6 +4648,7 @@ function render(){
   if(run){px=run.p.x;py=run.p.y;}
   else{const t=performance.now()*0.00006;px=Math.cos(t)*250;py=Math.sin(t*1.3)*180;}
   const sx=0, sy=0; // тряска камеры удалена целиком (Заход 27)
+  _vx0=px-W/2/ZOOM-90; _vx1=px+W/2/ZOOM+90; _vy0=py-H/2/ZOOM-90; _vy1=py+H/2/ZOOM+90; // рамка отсечения (с учётом зума) — Заход 28
   ctx.save();
   if(ZOOM!==1){ ctx.translate(Math.round(W/2+sx),Math.round(H/2+sy)); ctx.scale(ZOOM,ZOOM); ctx.translate(Math.round(-px),Math.round(-py)); } // зум-аут (мобайл, Заход 10)
   else ctx.translate(Math.round(W/2-px+sx),Math.round(H/2-py+sy)); // целые пиксели — нет швов между тайлами
@@ -4678,15 +4694,11 @@ function render(){
       ctx.globalAlpha=1;
     }
   }
-  // факельный свет вокруг героя
-  if(run){
-    const lr=Math.max(W,H)*0.62;
-    const tg=ctx.createRadialGradient(W/2,H/2,lr*0.16,W/2,H/2,lr);
-    tg.addColorStop(0,'rgba(255,176,86,0.10)');
-    tg.addColorStop(0.5,'rgba(255,150,70,0.03)');
-    tg.addColorStop(1,'rgba(0,0,0,0)');
+  // факельный свет вокруг героя (кеш-градиент; в режиме оптимизации — выкл)
+  if(run && !PERF()){
+    if(_heroLightG===null||_heroLightW!==W||_heroLightH!==H){ const lr=Math.max(W,H)*0.62; const tg=ctx.createRadialGradient(W/2,H/2,lr*0.16,W/2,H/2,lr); tg.addColorStop(0,'rgba(255,176,86,0.10)'); tg.addColorStop(0.5,'rgba(255,150,70,0.03)'); tg.addColorStop(1,'rgba(0,0,0,0)'); _heroLightG=tg; _heroLightW=W; _heroLightH=H; }
     ctx.globalCompositeOperation='lighter';
-    ctx.fillStyle=tg; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle=_heroLightG; ctx.fillRect(0,0,W,H);
     ctx.globalCompositeOperation='source-over';
   }
   // ТЬМА КОРОЛЯ: гасит мир, виден лишь круг вокруг героя + горящие факелы (Заход 8B)
@@ -4695,21 +4707,26 @@ function render(){
     if(!kingAlive && run.kingDark>0) run.kingDark=Math.max(0,run.kingDark-0.06); // король мёртв → тьма спадает
     const kd=run.kingDark||0;
     if(kd>0.01){
+      if(PERF()){ // оптимизация: плоское затемнение без градиента и свечения факелов
+        ctx.fillStyle='rgba(3,2,7,'+(0.6*kd).toFixed(2)+')'; ctx.fillRect(0,0,W,H);
+      } else {
       const dr=165;
       const g=ctx.createRadialGradient(W/2,H/2,dr*0.5,W/2,H/2,dr*2.5);
       g.addColorStop(0,'rgba(3,2,7,0)'); g.addColorStop(1,'rgba(3,2,7,'+(0.93*kd).toFixed(2)+')');
       ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
       if(run.torches) for(const tc of run.torches){ if(!tc.lit) continue; const txs=(tc.x-px)*ZOOM+W/2, tys=(tc.y-6-py)*ZOOM+H/2, gr=52*ZOOM; const tgl=ctx.createRadialGradient(txs,tys,2,txs,tys,gr); tgl.addColorStop(0,'rgba(255,200,90,'+(0.8*kd).toFixed(2)+')'); tgl.addColorStop(1,'rgba(255,150,40,0)'); ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle=tgl; ctx.fillRect(txs-gr-4,tys-gr-4,gr*2+8,gr*2+8); ctx.restore(); } // учёт зума (фикс ревью 10)
+      }
     }
   }
   if(!run) drawMenuAmbient();
-  ctx.imageSmoothingEnabled=true; // виньетка — мягкий градиент
-  ctx.globalAlpha=0.95;
-  ctx.drawImage(SPR.vig,0,0,W,H);
-  ctx.globalAlpha=1;
+  if(!PERF()){ // виньетка — в режиме оптимизации выкл
+    ctx.imageSmoothingEnabled=true; // виньетка — мягкий градиент
+    ctx.globalAlpha=0.95;
+    ctx.drawImage(SPR.vig,0,0,W,H);
+    ctx.globalAlpha=1;
+  }
   if(meta.settings.fps){
-    let s2=0,n2=0; for(const v of fpsBuf){if(v>0){s2+=v;n2++;}}
-    const f=n2&&s2>0?Math.round(n2/s2):0;
+    const f=Math.round(_fps); // переиспользуем посчитанный в loop() FPS (Заход 28)
     ctx.font='12px monospace'; ctx.textAlign='left';
     ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(W-66,H-72,60,18);
     ctx.fillStyle=f>=50?'#7ce86a':f>=30?'#e7b54a':'#e03048';
@@ -4739,6 +4756,7 @@ function drawMenuAmbient(){
     dx=(W-dw)*ax; dy=(H-dh)*ay;
     ctx.drawImage(img,dx,dy,dw,dh);
   } else { ctx.fillStyle='#0a0e1a'; ctx.fillRect(0,0,W,H); }
+  if(PERF()) return; // перф-режим: только статичный фон меню, без анимации (Заход 28)
   const mapX=fx=>dx+fx*dw, mapY=fy=>dy+fy*dh, mapS=s=>s*dw; // доли ширины картинки
 
   // кэш анимационных слоёв (раз / при ресайзе)
@@ -4946,8 +4964,8 @@ function loop(ts){
   fpsBuf[fpsI++%90]=dt;
   if((fpsI&7)===0){ let _s=0,_c=0; for(const v of fpsBuf){ if(v>0){ _s+=v; _c++; } } _fps=_c&&_s>0?_c/_s:60; _lowperf=_fps<38?true:(_fps>52?false:_lowperf); } // адаптивный FPS + авто-перф (моб.)
   if(hitStop>0) hitStop-=dt;
-  if(state==='playing'&&run) update(Math.min(dt,0.05/GAMESPEED)*(hitStop>0?0.12:1)*GAMESPEED*devTimescale); // кламп ДО ×1.5 → эфф. макс-шаг 0.05 (анти-туннель на низком FPS; 1.5× сохраняется до 30fps)
-  render();
+  if(state==='playing'&&run) update(Math.min(dt,0.05/GAMESPEED)*((hitStop>0&&!PERF())?0.12:1)*GAMESPEED*devTimescale); // кламп ДО ×1.5 → эфф. макс-шаг 0.05 (анти-туннель); hit-stop выкл в перф (Заход 28)
+  if(!(state==='paused'||state==='levelup')) render(); // не перерисовываем замороженный мир на паузе/левел-апе (Заход 28)
   A.intensity=(state==='playing'&&run)
     ? clamp(0.22+run.time/420*0.55+run.en.length/300*0.2+(run.bossRef&&!run.bossRef.dead?0.15:0),0,1)
     : 0.12;
@@ -5275,7 +5293,7 @@ function bindToggle(id,key){
 }
 bindToggle('tgHp','hpbar');
 bindToggle('tgDmg','dmgnum');
-bindToggle('tgPerf','perf');
+$('tgPerf').onclick=()=>{ meta.settings.perf=!meta.settings.perf; _perfDPR=meta.settings.perf; resize(); syncSettingsUI(); saveMeta(); A.click(); }; // перф-тумблер «ОПТИМИЗАЦИЯ»: меняет и DPR (Заход 28)
 bindToggle('tgFps','fps');
 $('btnReset').onclick=()=>{ const rb=$('btnReset'); const c=(+rb.dataset.ctr||5)-1;
   if(c<=0){ const _s={...meta.settings}; meta=defaultMeta(); meta.settings=_s; saveMeta(); syncSettingsUI(); updateMenu(); showBanner('ПРОГРЕСС СБРОШЕН','начни заново'); A.deny(); }
